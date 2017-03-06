@@ -17,7 +17,8 @@ git add --force Libs
 [Dd]ebugPublic/
 */[Rr]elease
 [Rr]eleases/
-x64/
+/x64
+/ClusteredRendering/x64/
 x86/
 bld/
 */[Bb]in/*
