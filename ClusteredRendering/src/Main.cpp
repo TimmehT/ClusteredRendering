@@ -1,5 +1,6 @@
 #include <DirectXPCH.h>
 #include "GameTimer.h"
+
 using namespace DirectX;
 
 // Define window & VSync Setting
