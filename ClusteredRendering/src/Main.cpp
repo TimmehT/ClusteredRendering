@@ -138,6 +138,8 @@ int InitApplication(HINSTANCE hInstance, int cmdShow)
 	ShowWindow(g_windowHandle, cmdShow);
 	UpdateWindow(g_windowHandle);
 
+	//const aiScene* sponza = aiImportFile("../data/models/crytek-sponza/sponza.obj", aiProcessPreset_TargetRealtime_MaxQuality);
+
 	return 0;
 }
 
