@@ -37,6 +37,8 @@
 #include <scene.h>
 
 #pragma comment(lib, "assimp-vc140-mt.lib")
+
+using namespace DirectX;
 // Safaely release a COM object
 template<typename T>
 inline void SafeRelease(T& ptr)
@@ -47,5 +49,6 @@ inline void SafeRelease(T& ptr)
 		ptr = NULL;
 	}
 }
+
 
 

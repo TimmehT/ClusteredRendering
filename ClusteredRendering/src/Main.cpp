@@ -1,7 +1,6 @@
 #include <DirectXPCH.h>
 #include "GameTimer.h"
-
-using namespace DirectX;
+#include "Camera.h"
 
 // Define window & VSync Setting
 const LONG g_windowWidth = 1280;
@@ -86,6 +85,7 @@ WORD g_indicies[36] =
 };
 
 GameTimer g_Timer;
+Camera g_cam;
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -817,8 +817,11 @@ void Update(float deltaTime)
 	XMVECTOR eyePosition = XMVectorSet(0, 0, -10, 1);
 	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
 	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);
-	g_viewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Frame], 0, nullptr, &g_viewMatrix, 0, 0);
+	g_cam.SetPosition(0.0f, 0.0f, -5.0f);
+	g_cam.LookAt(g_cam.GetPositionXM(), focusPoint, upDirection);
+	g_cam.UpdateViewMatrix();
+	g_viewMatrix = XMMatrixLookAtLH(g_cam.GetPositionXM(), g_cam.GetLookXM(), g_cam.GetUpXM());
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Frame], 0, nullptr, &g_cam.View(), 0, 0);
 
 
 	static float angle = 0.0f;
