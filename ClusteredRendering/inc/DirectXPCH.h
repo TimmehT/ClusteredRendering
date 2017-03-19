@@ -32,11 +32,19 @@
 
 
 // assimp 
-#include <cimport.h>
-#include <postprocess.h>
+#include <DefaultLogger.hpp>
+#include <Importer.hpp>
+#include <Exporter.hpp>
+#include <ProgressHandler.hpp>
 #include <scene.h>
+#include <postprocess.h>
+#include <mesh.h>
 
 #pragma comment(lib, "assimp-vc140-mt.lib")
+
+// DirectXTex
+#include <DDSTextureLoader.h>
+#include <WICTextureLoader.h>
 
 using namespace DirectX;
 // Safaely release a COM object

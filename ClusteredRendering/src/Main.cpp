@@ -817,7 +817,7 @@ void Update(float deltaTime)
 	XMVECTOR eyePosition = XMVectorSet(0, 0, -10, 1);
 	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
 	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);
-	g_cam.SetPosition(0.0f, 0.0f, -5.0f);
+	g_cam.SetPosition(0.0f, 0.0f, -10.0f);
 	g_cam.LookAt(g_cam.GetPositionXM(), focusPoint, upDirection);
 	g_cam.UpdateViewMatrix();
 	g_viewMatrix = XMMatrixLookAtLH(g_cam.GetPositionXM(), g_cam.GetLookXM(), g_cam.GetUpXM());

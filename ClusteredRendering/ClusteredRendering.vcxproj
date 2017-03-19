@@ -81,7 +81,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;dependencies\assimp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;dependencies\assimp;dependencies\DirectXTex</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DirectXPCH.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -103,7 +103,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;dependencies\assimp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;dependencies\assimp;dependencies\DirectXTex</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DirectXPCH.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -132,13 +132,17 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\GameTimer.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\TextureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Camera.h" />
     <ClInclude Include="inc\DirectXPCH.h" />
+    <ClInclude Include="inc\Engine.h" />
     <ClInclude Include="inc\GameTimer.h" />
+    <ClInclude Include="inc\TextureManager.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="data\shaders\SimplePixelShader.hlsl">
