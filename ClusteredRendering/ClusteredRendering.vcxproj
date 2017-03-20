@@ -128,20 +128,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Direct3DManager.cpp" />
     <ClCompile Include="src\DirectXPCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\GameTimer.cpp" />
-    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\GraphicsManager.cpp" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Camera.h" />
+    <ClInclude Include="inc\Direct3DManager.h" />
     <ClInclude Include="inc\DirectXPCH.h" />
     <ClInclude Include="inc\Engine.h" />
     <ClInclude Include="inc\GameTimer.h" />
+    <ClInclude Include="inc\GraphicsManager.h" />
     <ClInclude Include="inc\TextureManager.h" />
   </ItemGroup>
   <ItemGroup>
