@@ -1,7 +1,7 @@
 #include <DirectXPCH.h>
 #include "Engine.h"
 
-Engine* engine = 0;
+Engine* engine = nullptr;
 
 LRESULT CALLBACK MainWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -63,8 +63,14 @@ int Engine::Run()
 		else
 		{
 			m_timer.Tick();
-			ProcessFrame();
-
+			if (!m_appPaused)
+			{
+				ProcessFrame(m_timer.DeltaTime());
+			}
+			else
+			{
+				Sleep(100);
+			}
 		}
 	}
 
@@ -78,6 +84,41 @@ LRESULT Engine::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_ACTIVATE:
+	{
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			m_appPaused = true;
+			m_timer.Stop();
+		}
+		else
+		{
+			m_appPaused = false;
+			m_timer.Start();
+		}
+	}
+	break;
+	case WM_SIZE:
+	{
+		m_windowWidth = LOWORD(lParam);
+		m_windowHeight = HIWORD(lParam);
+	}
+	break;
+	case WM_ENTERSIZEMOVE:
+	{
+		m_appPaused = true;
+		m_resizing = true;
+		m_timer.Stop();
+	}
+	break;
+	case WM_EXITSIZEMOVE:
+	{
+		m_appPaused = false;
+		m_resizing = false;
+		m_timer.Start();
+		OnResize();
+	}
+	break;
 	case WM_PAINT:
 	{
 		hDC = BeginPaint(hwnd, &paintStruct);
@@ -117,7 +158,7 @@ int Engine::InitializeApplication(HINSTANCE hInstance, int cmdShow)
 	wndClass.lpfnWndProc = MainWndProc;
 	wndClass.hInstance = hInstance;
 	wndClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	//wndClass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wndClass.hIcon = LoadIcon(nullptr, IDI_WINLOGO);
 	wndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wndClass.lpszMenuName = nullptr;
 	wndClass.lpszClassName = m_windowClassName;
@@ -147,16 +188,21 @@ int Engine::InitializeApplication(HINSTANCE hInstance, int cmdShow)
 	return 0;
 }
 
-bool Engine::ProcessFrame()
+bool Engine::ProcessFrame(float deltaTime)
 {
 	bool result;
 
-	result = m_graphicsManager->ProcessFrame();
+	result = m_graphicsManager->ProcessFrame(deltaTime);
 	if (!result)
 	{
 		return false;
 	}
 	return false;
+}
+
+void Engine::OnResize()
+{
+
 }
 
 void Engine::UnitizializeApplication()

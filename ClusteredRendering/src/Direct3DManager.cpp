@@ -23,7 +23,7 @@ Direct3DManager::~Direct3DManager()
 {
 }
 
-bool Direct3DManager::Initialize(LONG windowWidth, LONG windowHeight, bool vsync, HWND windowHandle, 
+bool Direct3DManager::Initialize(bool vsync, HWND windowHandle, 
 	bool fullscreen, float screenDepth, float screenNear)
 {
 	// A window handle must have been created already.
@@ -88,7 +88,7 @@ bool Direct3DManager::Initialize(LONG windowWidth, LONG windowHeight, bool vsync
 
 	if (FAILED(hr))
 	{
-		return -1;
+		return false;
 	}
 
 	// The Direct3D device and swap chain were successfully created.
@@ -99,13 +99,13 @@ bool Direct3DManager::Initialize(LONG windowWidth, LONG windowHeight, bool vsync
 	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBuffer);
 	if (FAILED(hr))
 	{
-		return -1;
+		return false;
 	}
 
 	hr = m_device->CreateRenderTargetView(backBuffer, nullptr, &m_renderTargetView);
 	if (FAILED(hr))
 	{
-		return -1;
+		return false;
 	}
 
 	SafeRelease(backBuffer);
@@ -128,13 +128,13 @@ bool Direct3DManager::Initialize(LONG windowWidth, LONG windowHeight, bool vsync
 	hr = m_device->CreateTexture2D(&depthStencilBufferDesc, nullptr, &m_depthStencilBuffer);
 	if (FAILED(hr))
 	{
-		return -1;
+		return false;
 	}
 
 	hr = m_device->CreateDepthStencilView(m_depthStencilBuffer, nullptr, &m_depthStencilView);
 	if (FAILED(hr))
 	{
-		return -1;
+		return false;
 	}
 
 	// Setup depth/stencil state.
@@ -167,7 +167,7 @@ bool Direct3DManager::Initialize(LONG windowWidth, LONG windowHeight, bool vsync
 	hr = m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState);
 	if (FAILED(hr))
 	{
-		return -1;
+		return false;
 	}
 
 	// Initialize the viewport to occupy the entire client area.
@@ -178,11 +178,33 @@ bool Direct3DManager::Initialize(LONG windowWidth, LONG windowHeight, bool vsync
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 
-	return 0;
+	// Set up initial projection matrix
+	float fov = XMConvertToRadians(68.0f);
+	float aspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
+
+	m_projectionMatrix = XMMatrixPerspectiveFovLH(fov, aspectRatio, screenNear, screenDepth);
+
+	// Initialize world matrix
+	m_worldMatrix = XMMatrixIdentity();
+
+	// Create ortho projection matrix for 2D rendering
+	m_orthoMatrix = XMMatrixOrthographicLH(static_cast<float>(clientWidth), static_cast<float>(clientHeight), screenNear, screenDepth);
+	
+
+	return true;
 }
 
 void Direct3DManager::Unitialize()
 {
+	SafeRelease(m_rasterizerState);
+	SafeRelease(m_depthStencilView);
+	SafeRelease(m_depthStencilState);
+	SafeRelease(m_depthStencilBuffer);
+	SafeRelease(m_renderTargetView);
+	SafeRelease(m_deviceContext);
+	SafeRelease(m_device);
+	SafeRelease(m_swapChain);
+
 }
 
 
@@ -197,6 +219,12 @@ void Direct3DManager::SetRasterizerStage()
 	m_deviceContext->RSSetState(m_rasterizerState);
 	m_deviceContext->RSSetViewports(1, &m_viewport);
 
+}
+
+void Direct3DManager::SetOutputMergerStage()
+{
+	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+	m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
 }
 
 void Direct3DManager::Present(bool vsync)
@@ -312,13 +340,18 @@ ID3D11DeviceContext* Direct3DManager::GetDeviceContext()
 void Direct3DManager::GetProjectionMatrix(XMMATRIX& projectionMatrix)
 {
 	projectionMatrix = m_projectionMatrix;
+	return;
 }
 
-void Direct3DManager::GetWorldMatrix(XMMATRIX&)
+void Direct3DManager::GetWorldMatrix(XMMATRIX& worldMatrix)
 {
+	worldMatrix = m_worldMatrix;
+	return;
 }
 
-void Direct3DManager::GetOrthoMatrix(XMMATRIX&)
+void Direct3DManager::GetOrthoMatrix(XMMATRIX& orthoMatrix)
 {
+	orthoMatrix = m_orthoMatrix;
+	return;
 }
 

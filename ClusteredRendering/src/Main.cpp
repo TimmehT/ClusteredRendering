@@ -826,7 +826,7 @@ void Update(float deltaTime)
 	static float angle = 0.0f;
 	angle += 90.0f * deltaTime;
 	XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
-
+	//g_worldMatrix = XMMatrixIdentity();
 	g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
 }

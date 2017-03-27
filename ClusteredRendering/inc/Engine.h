@@ -20,7 +20,8 @@ public:
 
 private:
 	int InitializeApplication(HINSTANCE hInstance, int cmdShow);
-	bool ProcessFrame();
+	bool ProcessFrame(float);
+	void OnResize();
 	void UnitizializeApplication();
 
 private:
@@ -30,6 +31,10 @@ private:
 	LPCSTR m_windowName;
 	HWND m_windowHandle;
 	HINSTANCE m_appInstance;
+	bool m_appPaused;
+	bool m_minimized;
+	bool m_maximized;
+	bool m_resizing;
 
 	GameTimer m_timer;
 	GraphicsManager* m_graphicsManager;

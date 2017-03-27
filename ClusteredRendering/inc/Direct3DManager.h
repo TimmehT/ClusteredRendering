@@ -7,11 +7,12 @@ public:
 	Direct3DManager(const Direct3DManager&);
 	~Direct3DManager();
 
-	bool Initialize(LONG,LONG, bool, HWND, bool, float, float);
+	bool Initialize(bool, HWND, bool, float, float);
 	void Unitialize();
 
 	void Clear(const FLOAT[4], FLOAT, UINT8);
 	void SetRasterizerStage();
+	void SetOutputMergerStage();
 	void Present(bool);
 
 	DXGI_RATIONAL QueryRefreshRate(UINT,UINT, BOOL);
@@ -34,5 +35,8 @@ private:
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11RasterizerState* m_rasterizerState;
 	D3D11_VIEWPORT m_viewport;
+	XMMATRIX m_projectionMatrix;
+	XMMATRIX m_worldMatrix;
+	XMMATRIX m_orthoMatrix;
 
 };
