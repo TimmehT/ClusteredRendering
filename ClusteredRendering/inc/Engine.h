@@ -25,8 +25,8 @@ private:
 	void UnitizializeApplication();
 
 private:
-	LONG m_windowWidth;
-	LONG m_windowHeight;
+	unsigned __int16 m_windowWidth;
+	unsigned __int16 m_windowHeight;
 	LPCSTR m_windowClassName;
 	LPCSTR m_windowName;
 	HWND m_windowHandle;

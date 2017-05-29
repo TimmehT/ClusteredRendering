@@ -1,11 +1,22 @@
 #pragma once
+#include <malloc.h>
 
-class Direct3DManager
+__declspec(align(16)) class Direct3DManager
 {
 public:
 	Direct3DManager();
 	Direct3DManager(const Direct3DManager&);
 	~Direct3DManager();
+
+	void* operator new(size_t i)
+	{
+		return _mm_malloc(i, 16);
+	}
+
+	void operator delete(void* p)
+	{
+		_mm_free(p);
+	}
 
 	bool Initialize(bool, HWND, bool, float, float);
 	void Unitialize();

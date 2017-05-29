@@ -17,7 +17,6 @@ GraphicsManager::~GraphicsManager()
 
 bool GraphicsManager::Initialize(LONG windowWidth, LONG windowHeight, HWND windowHandle)
 {
-	bool result;
 
 	// Create D3D object
 	m_direct3D = new Direct3DManager;
@@ -31,7 +30,15 @@ bool GraphicsManager::Initialize(LONG windowWidth, LONG windowHeight, HWND windo
 		MessageBox(windowHandle, TEXT("Could not initialize Direct3D"), TEXT("Error"), MB_OK);
 		return false;
 	}
-	return false;
+
+	m_camera = new Camera;
+	if (!m_camera)
+	{
+		return false;
+	}
+
+
+	return true;
 }
 
 void GraphicsManager::Uninitialize()
@@ -41,6 +48,12 @@ void GraphicsManager::Uninitialize()
 		m_direct3D->Unitialize();
 		delete m_direct3D;
 		m_direct3D = nullptr;
+	}
+
+	if (m_camera)
+	{
+		delete m_camera;
+		m_camera = nullptr;
 	}
 }
 
