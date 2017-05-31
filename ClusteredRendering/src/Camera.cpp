@@ -8,7 +8,8 @@ Camera::Camera()
 	m_right(1.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look(0.0f, 0.0f, 1.0f),
-	m_camSpeed(300.0f)
+	m_camSpeed(3.0f),
+	m_camSensitivity(2.9f)
 {	
 }
 
@@ -39,7 +40,7 @@ void Camera::Pitch(float angle)
 	XMVECTOR right = FloatToVector(m_right);
 	XMVECTOR look = FloatToVector(m_look);
 	XMVECTOR up = FloatToVector(m_up);
-	XMMATRIX rot = XMMatrixRotationAxis(right, angle);
+	XMMATRIX rot = XMMatrixRotationAxis(right, angle * m_camSensitivity);
 
 	XMStoreFloat3(&m_look, XMVector3TransformNormal(look, rot));
 	XMStoreFloat3(&m_up, XMVector3TransformNormal(up, rot));
@@ -51,7 +52,7 @@ void Camera::Yaw(float angle)
 	XMVECTOR right = FloatToVector(m_right);
 	XMVECTOR look = FloatToVector(m_look);
 	XMVECTOR up = FloatToVector(m_up);
-	XMMATRIX rot = XMMatrixRotationAxis(FloatToVector(XMFLOAT3(0, 1, 0)), angle);
+	XMMATRIX rot = XMMatrixRotationAxis(FloatToVector(XMFLOAT3(0, 1, 0)), angle * m_camSensitivity);
 
 	XMStoreFloat3(&m_look, XMVector3TransformNormal(look, rot));
 	XMStoreFloat3(&m_up, XMVector3TransformNormal(up, rot));

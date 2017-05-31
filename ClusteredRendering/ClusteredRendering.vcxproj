@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="inc\RenderTarget.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Direct3DManager.cpp" />
     <ClCompile Include="src\DirectXPCH.cpp">
@@ -136,6 +137,7 @@
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\GameTimer.cpp" />
     <ClCompile Include="src\GraphicsManager.cpp" />
+    <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
   </ItemGroup>
@@ -146,7 +148,10 @@
     <ClInclude Include="inc\Engine.h" />
     <ClInclude Include="inc\GameTimer.h" />
     <ClInclude Include="inc\GraphicsManager.h" />
+    <ClInclude Include="inc\InputManager.h" />
+    <ClInclude Include="inc\RenderTarget.h" />
     <ClInclude Include="inc\TextureManager.h" />
+    <ClInclude Include="inc\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="data\shaders\SimplePixelShader.hlsl">

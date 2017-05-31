@@ -1,6 +1,7 @@
 #include <DirectXPCH.h>
 #include "GameTimer.h"
 #include "Camera.h"
+#include "InputManager.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -37,6 +38,9 @@ ID3D11Buffer* g_d3dIndexBuffer = nullptr;
 // Shader data
 ID3D11VertexShader* g_d3dVertexShader = nullptr;
 ID3D11PixelShader* g_d3dPixelShader = nullptr;
+
+float lastValue = 0;
+float diff = 0;
 
 // Shader resources 
 enum ConstantBuffer
@@ -86,6 +90,7 @@ WORD g_indicies[36] =
 
 GameTimer g_Timer;
 Camera g_cam;
+InputManager g_input;
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -795,6 +800,53 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_CREATE:
+	{
+		//RAWINPUTDEVICE rID[2];
+
+		////keyboard
+		//rID[0].usUsagePage = 1;
+		//rID[0].usUsage = 6;
+		//rID[0].dwFlags = 0;
+		//rID[0].hwndTarget = NULL;
+
+		////Mouse
+		//rID[1].usUsagePage = 1;
+		//rID[1].usUsage = 2;
+		//rID[1].dwFlags = 0;
+		//rID[1].hwndTarget = hwnd;
+		//if (RegisterRawInputDevices(rID, 2, sizeof(RAWINPUTDEVICE)) == FALSE)
+		//{
+		//	///Error
+		//}
+
+		g_input.InitializeRawMouse(hwnd);
+	}
+	break;
+	case WM_KEYDOWN:
+	{
+		g_input.SetKeyState(wParam, true);
+
+		if (g_input.KeyPressed(VK_ESCAPE))
+		{
+			PostMessage(hwnd, WM_QUIT, 0, 0);
+		}
+	}
+	break;
+	case WM_KEYUP:
+	{
+		g_input.SetKeyState(wParam, false);
+	}
+	break;
+	case WM_INPUT:
+	{
+		UINT bufferSize;
+		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &bufferSize, sizeof(RAWINPUTHEADER));
+		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, (LPVOID)g_input.GetMouseBuffer(), &bufferSize, sizeof(RAWINPUTHEADER));
+
+		g_input.UpdateMouse();
+	}
+	break;
 	case WM_PAINT:
 	{
 		hDC = BeginPaint(hwnd, &paintStruct);
@@ -815,6 +867,37 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Update(float deltaTime)
 {
+
+	if (g_input.Initialized())
+	{
+		if (g_input.KeyDown(VK_W))
+		{
+			g_cam.MoveForward(deltaTime);
+		}
+
+		if (g_input.KeyDown(VK_S))
+		{
+			g_cam.MoveBackward(deltaTime);
+		}
+
+		if (g_input.KeyDown(VK_A))
+		{
+			g_cam.MoveLeft(deltaTime);
+		}
+
+		if (g_input.KeyDown(VK_D))
+		{
+			g_cam.MoveRight(deltaTime);
+		}
+
+		if (g_input.MouseMoved())
+		{
+			g_cam.Pitch((g_input.GetMouseDiffY() * deltaTime));
+			g_cam.Yaw((g_input.GetMouseDiffX() * deltaTime));
+		}
+
+		g_input.Reset();
+	}
 	XMVECTOR eyePosition = XMVectorSet(0, 0, -10, 1);
 	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
 	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);
@@ -829,9 +912,11 @@ void Update(float deltaTime)
 	static float angle = 0.0f;
 	angle += 90.0f * deltaTime;
 	XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
-	//g_worldMatrix = XMMatrixIdentity();
-	g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
+	g_worldMatrix = XMMatrixIdentity();
+	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
+
+	
 }
 
 

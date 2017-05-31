@@ -35,6 +35,7 @@ private:
 	XMFLOAT3 m_position;
 
 	float m_camSpeed;
+	float m_camSensitivity;
 	CameraData m_camData;
 
 
