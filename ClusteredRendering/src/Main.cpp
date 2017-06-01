@@ -121,6 +121,8 @@ int InitApplication(HINSTANCE hInstance, int cmdShow)
 	wndClass.lpszMenuName = nullptr;
 	wndClass.lpszClassName = g_windowClassName;
 
+	ShowCursor(false);
+
 	if (!RegisterClassEx(&wndClass))
 	{
 		return -1;
@@ -298,7 +300,7 @@ int InitDirectX(HINSTANCE hInstance, BOOL vSync)
 			&g_d3dDeviceContext);
 	}
 
-	if (FAILED(hr))
+   	if (FAILED(hr))
 	{
 		return -1;
 	}
@@ -802,23 +804,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_CREATE:
 	{
-		//RAWINPUTDEVICE rID[2];
-
-		////keyboard
-		//rID[0].usUsagePage = 1;
-		//rID[0].usUsage = 6;
-		//rID[0].dwFlags = 0;
-		//rID[0].hwndTarget = NULL;
-
-		////Mouse
-		//rID[1].usUsagePage = 1;
-		//rID[1].usUsage = 2;
-		//rID[1].dwFlags = 0;
-		//rID[1].hwndTarget = hwnd;
-		//if (RegisterRawInputDevices(rID, 2, sizeof(RAWINPUTDEVICE)) == FALSE)
-		//{
-		//	///Error
-		//}
 
 		g_input.InitializeRawMouse(hwnd);
 	}
@@ -890,13 +875,35 @@ void Update(float deltaTime)
 			g_cam.MoveRight(deltaTime);
 		}
 
+		if (g_input.MouseScrolled())
+		{
+			if (g_input.GetMouseScrollPos() < 0)
+			{
+				g_cam.MoveBackward(deltaTime * 100);
+			}
+			if (g_input.GetMouseScrollPos() > 0)
+			{
+				g_cam.MoveForward(deltaTime * 100);
+			}
+		}
+
+		if (g_input.MouseButtonDown(0))
+		{
+			g_cam.MoveUp(deltaTime);
+		}
+
+		if (g_input.MouseButtonDown(1))
+		{
+			g_cam.MoveDown(deltaTime);
+		}
+
 		if (g_input.MouseMoved())
 		{
 			g_cam.Pitch((g_input.GetMouseDiffY() * deltaTime));
 			g_cam.Yaw((g_input.GetMouseDiffX() * deltaTime));
 		}
 
-		g_input.Reset();
+		
 	}
 	XMVECTOR eyePosition = XMVectorSet(0, 0, -10, 1);
 	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
@@ -916,7 +923,7 @@ void Update(float deltaTime)
 	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
 
-	
+	g_input.Reset();
 }
 
 

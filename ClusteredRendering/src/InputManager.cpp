@@ -85,7 +85,7 @@ bool InputManager::InitializeRawMouse(const HWND hwnd)
 {
 	m_rawID[0].usUsagePage = 0x01;
 	m_rawID[0].usUsage = 0x02;
-	m_rawID[0].dwFlags = RIDEV_CAPTUREMOUSE | RIDEV_INPUTSINK | RIDEV_NOLEGACY;
+	m_rawID[0].dwFlags = RIDEV_CAPTUREMOUSE | RIDEV_NOLEGACY;
 	m_rawID[0].hwndTarget = hwnd;
 
 	if (!RegisterRawInputDevices(m_rawID, 1, sizeof(RAWINPUTDEVICE)))
@@ -155,7 +155,7 @@ void InputManager::UpdateMouse()
 				m_mouseScrolled = true;
 				m_lastMouseScrollPos = m_mouseScrollPos;
 
-				if (m_rawInput->data.mouse.usButtonData > 0)
+				if ((short)m_rawInput->data.mouse.usButtonData > 0)
 					m_mouseScrollPos = 1;
 				else
 					m_mouseScrollPos = -1;
@@ -175,9 +175,12 @@ void InputManager::Reset()
 	m_mouseMoved = false;
 	m_mouseScrolled = false;
 
-	m_mouseButtonDown[0] = false;
-	m_mouseButtonDown[1] = false;
-	m_mouseButtonDown[2] = false;
+	//m_mouseButtonDown[0] = false;
+	//m_mouseButtonDown[1] = false;
+	//m_mouseButtonDown[2] = false;
+	m_lastMouseButtonDown[0] = true;
+	m_lastMouseButtonDown[1] = true;
+	m_lastMouseButtonDown[2] = true;
 
 	m_mouseDiffX = 0;
 	m_mouseDiffY = 0;
