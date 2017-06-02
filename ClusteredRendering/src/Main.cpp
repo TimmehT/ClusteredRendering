@@ -2,6 +2,7 @@
 #include "GameTimer.h"
 #include "Camera.h"
 #include "InputManager.h"
+#include "Keycodes.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -887,12 +888,12 @@ void Update(float deltaTime)
 			}
 		}
 
-		if (g_input.MouseButtonDown(0))
+		if (g_input.MouseButtonDown(LMB))
 		{
 			g_cam.MoveUp(deltaTime);
 		}
 
-		if (g_input.MouseButtonDown(1))
+		if (g_input.MouseButtonDown(RMB))
 		{
 			g_cam.MoveDown(deltaTime);
 		}

@@ -149,6 +149,7 @@
     <ClInclude Include="inc\GameTimer.h" />
     <ClInclude Include="inc\GraphicsManager.h" />
     <ClInclude Include="inc\InputManager.h" />
+    <ClInclude Include="inc\Keycodes.h" />
     <ClInclude Include="inc\RenderTarget.h" />
     <ClInclude Include="inc\TextureManager.h" />
     <ClInclude Include="inc\Vertex.h" />

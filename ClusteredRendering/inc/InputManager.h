@@ -60,4 +60,6 @@ private:
 	long m_mouseMovedX;
 	long m_mouseMovedY;
 
+	
+
 };
