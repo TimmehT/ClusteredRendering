@@ -266,6 +266,7 @@ int InitDirectX(HINSTANCE hInstance, BOOL vSync)
 	swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	swapChainDesc.Windowed = TRUE;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	UINT createDeviceFlags = 0;
 #if _DEBUG
@@ -531,11 +532,11 @@ bool LoadContent()
 	float clientWidth = static_cast<float>(clientRect.right - clientRect.left);
 	float clientHeight = static_cast<float>(clientRect.bottom - clientRect.top);
 
-	g_cam.SetLens(XMConvertToRadians(45.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
+	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
 
 	g_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.0f), clientWidth / clientHeight, 0.1f, 100.0f);
 
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_projectionMatrix, 0, 0);
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_cam.GetCamData().projMat, 0, 0);
 
 	return true;
 }
@@ -826,11 +827,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_INPUT:
 	{
+		
 		UINT bufferSize;
 		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &bufferSize, sizeof(RAWINPUTHEADER));
 		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, (LPVOID)g_input.GetMouseBuffer(), &bufferSize, sizeof(RAWINPUTHEADER));
 
 		g_input.UpdateMouse();
+		
 	}
 	break;
 	case WM_PAINT:
@@ -853,7 +856,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Update(float deltaTime)
 {
-
+	
 	if (g_input.Initialized())
 	{
 		if (g_input.KeyDown(VK_W))
@@ -902,9 +905,8 @@ void Update(float deltaTime)
 		{
 			g_cam.Pitch((g_input.GetMouseDiffY() * deltaTime));
 			g_cam.Yaw((g_input.GetMouseDiffX() * deltaTime));
+			
 		}
-
-		
 	}
 	XMVECTOR eyePosition = XMVectorSet(0, 0, -10, 1);
 	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
@@ -981,6 +983,8 @@ void Render()
 
 void Cleanup()
 {
+
+	g_d3dSwapChain->SetFullscreenState(FALSE, nullptr);
 	SafeRelease(g_d3dDepthStencilView);
 	SafeRelease(g_d3dRenderTargetView);
 	SafeRelease(g_d3dDepthStencilBuffer);

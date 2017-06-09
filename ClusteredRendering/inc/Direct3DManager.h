@@ -1,41 +1,29 @@
 #pragma once
-#include <malloc.h>
 
-__declspec(align(16)) class Direct3DManager
+class Direct3DManager
 {
 public:
 	Direct3DManager();
 	Direct3DManager(const Direct3DManager&);
 	~Direct3DManager();
 
-	void* operator new(size_t i)
-	{
-		return _mm_malloc(i, 16);
-	}
+	bool Initialize(HWND hwnd, bool vSync);
+	void Cleanup();
 
-	void operator delete(void* p)
-	{
-		_mm_free(p);
-	}
+	void Clear(const FLOAT clearColor[4], FLOAT clearDepth, UINT8 clearStencil);
+	void Present(bool vSync);
+	void OnResize(unsigned __int16 clientWidth, unsigned __int16 clientHeight);
 
-	bool Initialize(bool, HWND, bool, float, float);
-	void Unitialize();
-
-	void Clear(const FLOAT[4], FLOAT, UINT8);
-	void SetRasterizerStage();
-	void SetOutputMergerStage();
-	void Present(bool);
-
-	DXGI_RATIONAL QueryRefreshRate(UINT,UINT, BOOL);
+	DXGI_RATIONAL QueryRefreshRate(UINT clientWidth, UINT clientHeight, BOOL vSync);
 
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();
 
-	void GetProjectionMatrix(XMMATRIX&);
-	void GetWorldMatrix(XMMATRIX&);
-	void GetOrthoMatrix(XMMATRIX&);
 
 private:
+
+	bool ResizeSwapChain( unsigned __int16 clientWidth, unsigned __int16 clientHeight);
+
 	bool m_isVSyncEnabled;
 	IDXGISwapChain* m_swapChain;
 	ID3D11Device* m_device;
@@ -46,8 +34,5 @@ private:
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11RasterizerState* m_rasterizerState;
 	D3D11_VIEWPORT m_viewport;
-	XMMATRIX m_projectionMatrix;
-	XMMATRIX m_worldMatrix;
-	XMMATRIX m_orthoMatrix;
 
 };

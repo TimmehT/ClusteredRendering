@@ -2,9 +2,11 @@
 
 #include "Direct3DManager.h"
 #include "Camera.h"
+#include "InputManager.h"
+#include "Keycodes.h"
 
-const BOOL g_enableVSync = FALSE;
-const BOOL g_enableFullScreen = FALSE;
+const bool g_enableVSync = false;
+const bool g_enableFullScreen = false;
 const float g_screenDepth = 1000.0f;
 const float g_screenNear = 0.1f;
 
@@ -15,13 +17,11 @@ public:
 	GraphicsManager(const GraphicsManager&);
 	~GraphicsManager();
 
-	bool Initialize(LONG windowWidth, LONG windowHeight, HWND windowHandle);
-	void Uninitialize();
-	bool ProcessFrame(float);
-
-private:
-	bool Update(float);
+	bool Initialize(unsigned __int16 clientWidth, unsigned __int16 clientHeight, HWND windowHandle);
+	void Cleanup();
+	bool Update(InputManager* input, float deltaTime);
 	bool Render();
+	void OnResize(unsigned __int16 clientWidth, unsigned __int16 clientHeight);
 
 private:
 	Direct3DManager* m_direct3D;

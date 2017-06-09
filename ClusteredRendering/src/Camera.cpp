@@ -9,7 +9,7 @@ Camera::Camera()
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look(0.0f, 0.0f, 1.0f),
 	m_camSpeed(3.0f),
-	m_camSensitivity(2.9f)
+	m_camSensitivity(1.0f)
 {	
 }
 
