@@ -19,14 +19,14 @@ public:
 
 
 private:
-	bool InitializeWindows();
+	bool InitializeWindows(HINSTANCE hInstance, int cmdShow);
 	void ShutdownWindows();
 	void OnResize();
 
 	HINSTANCE m_hinstance;
 	HWND m_windowHandle;
-	unsigned __int16 g_windowWidth;
-	unsigned __int16 g_windowHeight;
+	unsigned __int16 m_windowWidth;
+	unsigned __int16 m_windowHeight;
 	LPCSTR g_windowClassName;
 	LPCSTR g_windowName;
 

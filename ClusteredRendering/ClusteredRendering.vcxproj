@@ -127,7 +127,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="inc\RenderTarget.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Direct3DManager.cpp" />
@@ -141,6 +140,7 @@
     <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
+    <ClCompile Include="src\WICTextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Application.h" />
@@ -152,9 +152,9 @@
     <ClInclude Include="inc\GraphicsManager.h" />
     <ClInclude Include="inc\InputManager.h" />
     <ClInclude Include="inc\Keycodes.h" />
-    <ClInclude Include="inc\RenderTarget.h" />
     <ClInclude Include="inc\TextureManager.h" />
     <ClInclude Include="inc\Vertex.h" />
+    <ClInclude Include="inc\WICTextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="data\shaders\SimplePixelShader.hlsl">

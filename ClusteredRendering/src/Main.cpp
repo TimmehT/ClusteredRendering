@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "InputManager.h"
 #include "Keycodes.h"
+#include "WICTextureLoader.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -145,6 +146,8 @@ int InitApplication(HINSTANCE hInstance, int cmdShow)
 
 	ShowWindow(g_windowHandle, cmdShow);
 	UpdateWindow(g_windowHandle);
+
+	
 
 	return 0;
 }
@@ -538,6 +541,14 @@ bool LoadContent()
 
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_cam.GetCamData().projMat, 0, 0);
 
+	ID3D11ShaderResourceView* srv = nullptr;
+
+	hr = CreateWICTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png", nullptr, &srv);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -762,7 +773,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine,
 {
 	UNREFERENCED_PARAMETER(prevInstance);
 	UNREFERENCED_PARAMETER(cmdLine);
-
+	CoInitialize(nullptr);
 	// Check for DirectX Math library support
 	if (!XMVerifyCPUSupport())
 	{
@@ -792,6 +803,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPWSTR cmdLine,
 
 	UnloadContent();
 	Cleanup();
+	CoUninitialize();
+
+	
 
 	return returnCode;
 }
@@ -923,6 +937,7 @@ void Update(float deltaTime)
 	angle += 90.0f * deltaTime;
 	XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
 	g_worldMatrix = XMMatrixIdentity();
+	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
 	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
 
