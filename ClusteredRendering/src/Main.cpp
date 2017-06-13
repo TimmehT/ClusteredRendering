@@ -41,6 +41,9 @@ ID3D11Buffer* g_d3dIndexBuffer = nullptr;
 ID3D11VertexShader* g_d3dVertexShader = nullptr;
 ID3D11PixelShader* g_d3dPixelShader = nullptr;
 
+ID3D11SamplerState* g_d3dSamplerState = nullptr;
+ID3D11ShaderResourceView* g_tex = nullptr;
+
 float lastValue = 0;
 float diff = 0;
 
@@ -64,19 +67,19 @@ XMMATRIX g_projectionMatrix;
 struct VertexPosColor
 {
 	XMFLOAT3 position;
-	XMFLOAT3 color;
+	XMFLOAT2 tex;
 };
 
 VertexPosColor g_vertices[8] =
 {
-	{ XMFLOAT3(-1.0f,-1.0f,-1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) }, // 0
-	{ XMFLOAT3(-1.0f, 1.0f,-1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 1
-	{ XMFLOAT3(1.0f, 1.0f,-1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 2
-	{ XMFLOAT3(1.0f,-1.0f,-1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 3
-	{ XMFLOAT3(-1.0f,-1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, // 4
-	{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, // 5
-	{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, // 6
-	{ XMFLOAT3(1.0f,-1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }, // 7
+	{ XMFLOAT3(-1.0f,-1.0f,-1.0f), XMFLOAT2(0.0f, 1.0f) }, // 0
+	{ XMFLOAT3(-1.0f, 1.0f,-1.0f), XMFLOAT2(0.0f, 0.0f) }, // 1
+	{ XMFLOAT3(1.0f, 1.0f,-1.0f), XMFLOAT2(1.0f, 0.0f) }, // 2
+	{ XMFLOAT3(1.0f,-1.0f,-1.0f), XMFLOAT2(1.0f, 1.0f) }, // 3
+	{ XMFLOAT3(-1.0f,-1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) }, // 4
+	{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) }, // 5
+	{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) }, // 6
+	{ XMFLOAT3(1.0f,-1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) }, // 7
 };
 
 WORD g_indicies[36] =
@@ -493,7 +496,7 @@ bool LoadContent()
 	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor,position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor,color), D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor,tex), D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	hr = g_d3dDevice->CreateInputLayout(vertexLayoutDesc, _countof(vertexLayoutDesc), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &g_d3dInputLayout);
@@ -541,13 +544,39 @@ bool LoadContent()
 
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_cam.GetCamData().projMat, 0, 0);
 
-	ID3D11ShaderResourceView* srv = nullptr;
+	
 
-	hr = CreateWICTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png", nullptr, &srv);
+	hr = CreateWICTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png", nullptr, &g_tex);
 	if (FAILED(hr))
 	{
 		return false;
 	}
+
+	// Create a sampler state for texture sampling in the pixel shader
+	D3D11_SAMPLER_DESC samplerDesc;
+	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.BorderColor[0] = 1.0f;
+	samplerDesc.BorderColor[1] = 1.0f;
+	samplerDesc.BorderColor[2] = 1.0f;
+	samplerDesc.BorderColor[3] = 1.0f;
+	samplerDesc.MinLOD = -FLT_MAX;
+	samplerDesc.MaxLOD = FLT_MAX;
+
+	hr = g_d3dDevice->CreateSamplerState(&samplerDesc, &g_d3dSamplerState);
+	if (FAILED(hr))
+	{
+		//MessageBoxA(m_Window.get_WindowHandle(), "Failed to create texture sampler.", "Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
 
 	return true;
 }
@@ -987,6 +1016,9 @@ void Render()
 	g_d3dDeviceContext->RSSetViewports(1, &g_viewport);
 
 	g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
+
+	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
+	g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_tex);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
