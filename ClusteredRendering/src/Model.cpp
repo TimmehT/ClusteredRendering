@@ -24,6 +24,10 @@ void Model::LoadModel(const char * file)
 
 void Model::Render()
 {
+	for (unsigned int i = 0; i < m_meshList.size(); i++)
+	{
+		m_meshList[i].Render();
+	}
 }
 
 void Model::ProecessNode(aiNode * node, const aiScene* scene)
@@ -74,14 +78,14 @@ Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene)
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		/*std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 		std::vector<Texture> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
 		std::vector<Texture> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
-		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());*/
 	}
 	return Mesh(vertices,indices,textures);
 }

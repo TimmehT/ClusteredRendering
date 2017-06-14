@@ -4,6 +4,7 @@
 #include "InputManager.h"
 #include "Keycodes.h"
 #include "WICTextureLoader.h"
+#include "Model.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -82,7 +83,7 @@ VertexPosColor g_vertices[8] =
 	{ XMFLOAT3(1.0f,-1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) }, // 7
 };
 
-WORD g_indicies[36] =
+unsigned int g_indicies[36] =
 {
 	0, 1, 2, 0, 2, 3,
 	4, 6, 5, 4, 7, 6,
@@ -96,6 +97,8 @@ WORD g_indicies[36] =
 GameTimer g_Timer;
 Camera g_cam;
 InputManager g_input;
+
+Model g_sponza;
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -432,7 +435,7 @@ bool LoadContent()
 	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.ByteWidth = sizeof(WORD) * _countof(g_indicies);
+	indexBufferDesc.ByteWidth = sizeof(unsigned int) * _countof(g_indicies);
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	resourceData.pSysMem = g_indicies;
@@ -540,7 +543,7 @@ bool LoadContent()
 
 	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
 
-	g_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.0f), clientWidth / clientHeight, 0.1f, 100.0f);
+	g_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.0f), clientWidth / clientHeight, 0.1f, 3000.0f);
 
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_cam.GetCamData().projMat, 0, 0);
 
@@ -577,6 +580,7 @@ bool LoadContent()
 		return false;
 	}
 
+	g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj");
 
 	return true;
 }
@@ -922,6 +926,7 @@ void Update(float deltaTime)
 			g_cam.MoveRight(deltaTime);
 		}
 
+
 		if (g_input.MouseScrolled())
 		{
 			if (g_input.GetMouseScrollPos() < 0)
@@ -965,10 +970,10 @@ void Update(float deltaTime)
 	static float angle = 0.0f;
 	angle += 90.0f * deltaTime;
 	XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
-	g_worldMatrix = XMMatrixIdentity();
+	//g_worldMatrix = XMMatrixIdentity();
 	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
 	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
+	//g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
 
 	g_input.Reset();
 }
@@ -1004,9 +1009,9 @@ void Render()
 	const UINT vertexStride = sizeof(VertexPosColor);
 	const UINT offset = 0;
 
-	g_d3dDeviceContext->IASetVertexBuffers(0, 1, &g_d3dVertexBuffer, &vertexStride, &offset);
+	//g_d3dDeviceContext->IASetVertexBuffers(0, 1, &g_d3dVertexBuffer, &vertexStride, &offset);
 	g_d3dDeviceContext->IASetInputLayout(g_d3dInputLayout);
-	g_d3dDeviceContext->IASetIndexBuffer(g_d3dIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	//g_d3dDeviceContext->IASetIndexBuffer(g_d3dIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
@@ -1022,8 +1027,15 @@ void Render()
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
-
-	g_d3dDeviceContext->DrawIndexed(_countof(g_indicies), 0, 0);
+	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+	XMMATRIX rot = XMMatrixRotationX(0.0f);
+	XMMATRIX scale = XMMatrixScaling(0.01f, 0.01f, 0.01f);
+	g_worldMatrix = translation * rot * scale;
+	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
+	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
+	g_sponza.Render();
+	//g_d3dDeviceContext->DrawIndexed(_countof(g_indicies), 0, 0);
 
 	Present(g_enableVSync);
 }

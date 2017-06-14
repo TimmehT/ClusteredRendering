@@ -26,7 +26,7 @@ public:
 	void MoveRight(float dt);
 
 	const CameraData& GetCamData();
-
+	
 
 private:
 	XMFLOAT3 m_up;
