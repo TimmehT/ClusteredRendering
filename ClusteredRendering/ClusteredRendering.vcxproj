@@ -141,6 +141,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Model.cpp" />
+    <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="src\WICTextureLoader.cpp" />
   </ItemGroup>
@@ -156,6 +157,7 @@
     <ClInclude Include="inc\Keycodes.h" />
     <ClInclude Include="inc\Mesh.h" />
     <ClInclude Include="inc\Model.h" />
+    <ClInclude Include="inc\Texture.h" />
     <ClInclude Include="inc\TextureManager.h" />
     <ClInclude Include="inc\Vertex.h" />
     <ClInclude Include="inc\WICTextureLoader.h" />

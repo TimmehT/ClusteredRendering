@@ -5,6 +5,7 @@
 #include "Keycodes.h"
 #include "WICTextureLoader.h"
 #include "Model.h"
+#include "Texture.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -43,7 +44,7 @@ ID3D11VertexShader* g_d3dVertexShader = nullptr;
 ID3D11PixelShader* g_d3dPixelShader = nullptr;
 
 ID3D11SamplerState* g_d3dSamplerState = nullptr;
-ID3D11ShaderResourceView* g_tex = nullptr;
+//ID3D11ShaderResourceView* g_tex = nullptr;
 
 float lastValue = 0;
 float diff = 0;
@@ -99,6 +100,7 @@ Camera g_cam;
 InputManager g_input;
 
 Model g_sponza;
+Texture g_sponzaTexture;
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -549,8 +551,13 @@ bool LoadContent()
 
 	
 
-	hr = CreateWICTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png", nullptr, &g_tex);
+	/*hr = CreateWICTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png", nullptr, &g_tex);
 	if (FAILED(hr))
+	{
+		return false;
+	}*/
+
+	if (!g_sponzaTexture.LoadTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png"))
 	{
 		return false;
 	}
@@ -580,7 +587,12 @@ bool LoadContent()
 		return false;
 	}
 
-	g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj");
+	//g_sponza = new Model();
+
+	if (!g_sponza.LoadModel("../data/models/nanosuit/nanosuit.obj", g_d3dDevice))
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -760,6 +772,7 @@ void UnloadContent()
 	SafeRelease(g_d3dInputLayout);
 	SafeRelease(g_d3dVertexShader);
 	SafeRelease(g_d3dPixelShader);
+	//SafeDelete(g_sponza);
 
 }
 
@@ -1023,18 +1036,20 @@ void Render()
 	g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
 
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
-	g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_tex);
+	//g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_tex);
+	g_sponzaTexture.PSSetSRV(g_d3dDeviceContext, 0);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
 	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 	XMMATRIX rot = XMMatrixRotationX(0.0f);
 	XMMATRIX scale = XMMatrixScaling(0.01f, 0.01f, 0.01f);
+	g_worldMatrix = XMMatrixIdentity();
 	g_worldMatrix = translation * rot * scale;
 	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
 	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
-	g_sponza.Render();
+	g_sponza.Render(g_d3dDeviceContext);
 	//g_d3dDeviceContext->DrawIndexed(_countof(g_indicies), 0, 0);
 
 	Present(g_enableVSync);

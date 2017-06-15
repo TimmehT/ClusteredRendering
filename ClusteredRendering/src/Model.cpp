@@ -1,5 +1,6 @@
 #include "DirectXPCH.h"
 #include "Model.h"
+#include "Texture.h"
 
 Model::Model()
 {
@@ -7,48 +8,56 @@ Model::Model()
 
 Model::~Model()
 {
+	for (unsigned int i = 0; i < m_meshList.size(); i++)
+	{
+		SafeDelete(m_meshList[i]);
+	}
 }
 
-void Model::LoadModel(const char * file)
+bool Model::LoadModel(std::string const &file, ID3D11Device* device)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_CalcTangentSpace);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
-		return;
+		return false;
 	}
 
-	ProecessNode(scene->mRootNode, scene);
+	directory = file.substr(0,file.find_last_of('/'));
+
+	ProecessNode(scene->mRootNode, scene, device);
+
+	return true;
 }
 
-void Model::Render()
+void Model::Render(ID3D11DeviceContext* context)
 {
 	for (unsigned int i = 0; i < m_meshList.size(); i++)
 	{
-		m_meshList[i].Render();
+		m_meshList[i]->Render(context);
 	}
 }
 
-void Model::ProecessNode(aiNode * node, const aiScene* scene)
+void Model::ProecessNode(aiNode * node, const aiScene* scene, ID3D11Device* device)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		m_meshList.push_back(ProcessMesh(mesh, scene));
+		m_meshList.push_back(ProcessMesh(mesh, scene, device));
 	}
 
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
-		ProecessNode(node->mChildren[i], scene);
+		ProecessNode(node->mChildren[i], scene, device);
 	}
 }
 
-Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene)
+Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* device)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<Texture> textures;
+	std::vector<TexturePT> textures;
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -78,14 +87,49 @@ Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene)
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		/*std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		std::vector<TexturePT> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-		std::vector<Texture> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		/*std::vector<TexturePT> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-		std::vector<Texture> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+		std::vector<TexturePT> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());*/
 	}
-	return Mesh(vertices,indices,textures);
+	return new Mesh(&vertices,&indices,textures, device);
+}
+
+std::vector<TexturePT> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName)
+{
+
+	std::vector<TexturePT> textures;
+
+	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+	{
+		aiString str;
+		mat->GetTexture(type, i, &str);
+
+		bool skip = false;
+		for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
+		{
+			if (std::strcmp(m_loadedTextures[j].path.C_Str(), str.C_Str()) == 0)
+			{
+				textures.push_back(m_loadedTextures[j]);
+				skip = true;
+				break;
+			}
+			
+		}
+
+		if (!skip)
+		{
+			TexturePT texture;
+			texture.type = typeName;
+			texture.path = str;
+			textures.push_back(texture);
+			m_loadedTextures.push_back(texture);
+		}
+
+	}
+	return textures;
 }

@@ -1,27 +1,30 @@
 #pragma once
 #include "Vertex.h"
+#include "Texture.h"
 
-struct Texture
+struct TexturePT
 {
 	unsigned int id;
 	std::string type;
+	aiString path;
+};
+
+struct Material
+{
+	Texture* diffuse;
 };
 
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, std::vector<Texture> textureList);
+	Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<TexturePT> textureList, ID3D11Device* device);
 	~Mesh();
 	
-	void Render();
-
-	std::vector<Vertex> m_vertexList;
-	std::vector<unsigned int> m_indexList;
-	std::vector<Texture> m_textureList;
+	void Render(ID3D11DeviceContext* context);
 
 private:
 
-	void InitBuffers();
+	void InitBuffers(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, ID3D11Device* device);
 
 	ID3D11Buffer* m_vertexBuffer;
 	ID3D11Buffer* m_indexBuffer;
