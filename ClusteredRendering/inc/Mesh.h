@@ -17,7 +17,7 @@ struct Material
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<TexturePT> textureList, ID3D11Device* device);
+	Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture> textureList, ID3D11Device* device);
 	~Mesh();
 	
 	void Render(ID3D11DeviceContext* context);
@@ -25,6 +25,7 @@ public:
 private:
 
 	void InitBuffers(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, ID3D11Device* device);
+	void InitTextures(std::vector<Texture> textureList, ID3D11Device* device, ID3D11DeviceContext* context);
 
 	ID3D11Buffer* m_vertexBuffer;
 	ID3D11Buffer* m_indexBuffer;

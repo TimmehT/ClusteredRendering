@@ -1,7 +1,7 @@
 #include "DirectXPCH.h"
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<TexturePT> textureList, ID3D11Device* device)
+Mesh::Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture> textureList, ID3D11Device* device)
 {
 	m_indexBuffer = nullptr;
 	m_vertexBuffer = nullptr;
@@ -74,5 +74,13 @@ void Mesh::InitBuffers(std::vector<Vertex>* vertexList, std::vector<unsigned int
 	if (FAILED(hr))
 	{
 		//return false;
+	}
+}
+
+void Mesh::InitTextures(std::vector<Texture> textureList, ID3D11Device * device, ID3D11DeviceContext * context)
+{
+	for (unsigned int i = 0; i < textureList.size(); i++)
+	{
+		//textureList[i].LoadTextureFromFile(device, context, );
 	}
 }

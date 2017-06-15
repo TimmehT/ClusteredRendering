@@ -589,7 +589,7 @@ bool LoadContent()
 
 	//g_sponza = new Model();
 
-	if (!g_sponza.LoadModel("../data/models/nanosuit/nanosuit.obj", g_d3dDevice))
+	if (!g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj", g_d3dDevice))
 	{
 		return false;
 	}

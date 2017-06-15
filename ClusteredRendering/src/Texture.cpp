@@ -32,3 +32,14 @@ void Texture::PSSetSRV(ID3D11DeviceContext* context, unsigned int slot)
 {
 	context->PSSetShaderResources(slot, 1, &m_textureSRV);
 }
+
+const TextureData & Texture::GetTexData()
+{
+	// TODO: insert return statement here
+	return m_texData;
+}
+
+void Texture::SetPath(aiString &path)
+{
+	m_texData.path = path;
+}

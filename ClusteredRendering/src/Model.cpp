@@ -14,7 +14,7 @@ Model::~Model()
 	}
 }
 
-bool Model::LoadModel(std::string const &file, ID3D11Device* device)
+bool Model::LoadModel(const char* file, ID3D11Device* device)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_CalcTangentSpace);
@@ -24,7 +24,9 @@ bool Model::LoadModel(std::string const &file, ID3D11Device* device)
 		return false;
 	}
 
-	directory = file.substr(0,file.find_last_of('/'));
+
+	directory = file;
+	directory = directory.substr(0, directory.find_last_of('/'));
 
 	ProecessNode(scene->mRootNode, scene, device);
 
@@ -57,7 +59,7 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<TexturePT> textures;
+	std::vector<Texture> textures;
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -87,7 +89,7 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<TexturePT> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 		/*std::vector<TexturePT> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
@@ -99,10 +101,10 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	return new Mesh(&vertices,&indices,textures, device);
 }
 
-std::vector<TexturePT> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName)
+std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName)
 {
 
-	std::vector<TexturePT> textures;
+	std::vector<Texture> textures;
 
 	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 	{
@@ -112,7 +114,7 @@ std::vector<TexturePT> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureTy
 		bool skip = false;
 		for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
 		{
-			if (std::strcmp(m_loadedTextures[j].path.C_Str(), str.C_Str()) == 0)
+			if (std::strcmp(m_loadedTextures[j].GetTexData().path.C_Str(), str.C_Str()) == 0)
 			{
 				textures.push_back(m_loadedTextures[j]);
 				skip = true;
@@ -123,9 +125,18 @@ std::vector<TexturePT> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureTy
 
 		if (!skip)
 		{
-			TexturePT texture;
-			texture.type = typeName;
-			texture.path = str;
+			Texture texture;
+
+			std::string filepath = std::string(str.data);
+			std::replace(filepath.begin(), filepath.end(), '\\', '/');
+			filepath = std::string(directory.c_str()) + '/' + std::string(filepath.c_str());
+			wchar_t wc_path[MAX_PATH];
+
+			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);
+
+			
+
+			texture.SetPath(str);
 			textures.push_back(texture);
 			m_loadedTextures.push_back(texture);
 		}
