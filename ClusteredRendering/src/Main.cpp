@@ -500,8 +500,9 @@ bool LoadContent()
 	// Create the input layout for the vertex shader.
 	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor,position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexPosColor,tex), D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	hr = g_d3dDevice->CreateInputLayout(vertexLayoutDesc, _countof(vertexLayoutDesc), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &g_d3dInputLayout);
@@ -589,7 +590,7 @@ bool LoadContent()
 
 	//g_sponza = new Model();
 
-	if (!g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj", g_d3dDevice))
+	if (!g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj", g_d3dDevice, g_d3dDeviceContext))
 	{
 		return false;
 	}
@@ -1037,7 +1038,7 @@ void Render()
 
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 	//g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_tex);
-	g_sponzaTexture.PSSetSRV(g_d3dDeviceContext, 0);
+	//g_sponzaTexture.PSSetSRV(g_d3dDeviceContext, 0);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);

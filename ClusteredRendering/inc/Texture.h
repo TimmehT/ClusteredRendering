@@ -2,8 +2,8 @@
 
 struct TextureData
 {
-	ID3D11ShaderResourceView* textureSRV;
 	aiString path;
+	wchar_t finalPath;
 	std::string type;
 };
 
@@ -19,6 +19,7 @@ public:
 	const TextureData& GetTexData();
 
 	void SetPath(aiString &path);
+	void SetFinalPath(const wchar_t* path);
 
 private:
 	ID3D11ShaderResourceView* m_textureSRV;

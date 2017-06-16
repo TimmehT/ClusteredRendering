@@ -9,6 +9,7 @@ Mesh::Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList
 	m_numIndices = indexList->size();
 	m_vertexStride = sizeof(Vertex);
 	m_vertexOffset = 0;
+	textures = textureList;
 
 	InitBuffers(vertexList, indexList, device);
 }
@@ -32,7 +33,11 @@ void Mesh::Render(ID3D11DeviceContext* context)
 	context->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &m_vertexOffset);
 	context->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-
+	if (textures.size() != 0)
+	{
+		textures[0].PSSetSRV(context, 0);
+	}
+	
 
 	context->DrawIndexed(m_numIndices, 0, 0);
 	

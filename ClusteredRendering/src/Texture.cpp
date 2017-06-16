@@ -9,10 +9,10 @@ Texture::Texture()
 
 Texture::~Texture()
 {
-	if (m_textureSRV)
+	/*if (m_textureSRV)
 	{
 		SafeRelease(m_textureSRV);
-	}
+	}*/
 }
 
 bool Texture::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* path)
@@ -42,4 +42,9 @@ const TextureData & Texture::GetTexData()
 void Texture::SetPath(aiString &path)
 {
 	m_texData.path = path;
+}
+
+void Texture::SetFinalPath(const wchar_t* path)
+{
+	wcscpy_s(&m_texData.finalPath,MAX_PATH, path);
 }

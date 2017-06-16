@@ -14,7 +14,7 @@ Model::~Model()
 	}
 }
 
-bool Model::LoadModel(const char* file, ID3D11Device* device)
+bool Model::LoadModel(const char* file, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_CalcTangentSpace);
@@ -28,7 +28,7 @@ bool Model::LoadModel(const char* file, ID3D11Device* device)
 	directory = file;
 	directory = directory.substr(0, directory.find_last_of('/'));
 
-	ProecessNode(scene->mRootNode, scene, device);
+	ProecessNode(scene->mRootNode, scene, device, context);
 
 	return true;
 }
@@ -41,21 +41,21 @@ void Model::Render(ID3D11DeviceContext* context)
 	}
 }
 
-void Model::ProecessNode(aiNode * node, const aiScene* scene, ID3D11Device* device)
+void Model::ProecessNode(aiNode * node, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		m_meshList.push_back(ProcessMesh(mesh, scene, device));
+		m_meshList.push_back(ProcessMesh(mesh, scene, device, context));
 	}
 
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
-		ProecessNode(node->mChildren[i], scene, device);
+		ProecessNode(node->mChildren[i], scene, device, context);
 	}
 }
 
-Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* device)
+Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
@@ -89,7 +89,7 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+		std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse",device, context);
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 		/*std::vector<TexturePT> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
@@ -101,7 +101,7 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	return new Mesh(&vertices,&indices,textures, device);
 }
 
-std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName)
+std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 
 	std::vector<Texture> textures;
@@ -128,14 +128,22 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType
 			Texture texture;
 
 			std::string filepath = std::string(str.data);
-			std::replace(filepath.begin(), filepath.end(), '\\', '/');
+
+			if (filepath.rfind('\\') != 0)
+			{
+				std::replace(filepath.begin(), filepath.end(), '\\', '/');
+			}
+			
 			filepath = std::string(directory.c_str()) + '/' + std::string(filepath.c_str());
 			wchar_t wc_path[MAX_PATH];
+			wchar_t wc_p;
+
 
 			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);
 
+			texture.LoadTextureFromFile(device, context, wc_path);
 			
-
+			//texture.SetFinalPath(wc_path);
 			texture.SetPath(str);
 			textures.push_back(texture);
 			m_loadedTextures.push_back(texture);

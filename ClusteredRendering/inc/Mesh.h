@@ -35,6 +35,8 @@ private:
 	unsigned int m_vertexOffset;
 	unsigned int m_vertexStride;
 
+	std::vector<Texture> textures;
+
 
 
 };
