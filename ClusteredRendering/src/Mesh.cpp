@@ -1,7 +1,7 @@
 #include "DirectXPCH.h"
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture> textureList, ID3D11Device* device)
+Mesh::Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture*> textureList, ID3D11Device* device)
 {
 	m_indexBuffer = nullptr;
 	m_vertexBuffer = nullptr;
@@ -25,6 +25,8 @@ Mesh::~Mesh()
 	{
 		SafeRelease(m_vertexBuffer);
 	}
+
+	
 	
 }
 
@@ -35,7 +37,7 @@ void Mesh::Render(ID3D11DeviceContext* context)
 
 	if (textures.size() != 0)
 	{
-		textures[0].PSSetSRV(context, 0);
+		textures[0]->PSSetSRV(context, 0);
 	}
 	
 

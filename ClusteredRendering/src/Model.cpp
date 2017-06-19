@@ -12,6 +12,14 @@ Model::~Model()
 	{
 		SafeDelete(m_meshList[i]);
 	}
+
+	for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
+	{
+		SafeDelete(m_loadedTextures[j]);
+	}
+
+	
+
 }
 
 bool Model::LoadModel(const char* file, ID3D11Device* device, ID3D11DeviceContext* context)
@@ -59,7 +67,8 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<Texture> textures;
+	std::vector<Texture*> textures;
+	
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -89,7 +98,7 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse",device, context);
+		std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse",device, context);
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 		/*std::vector<TexturePT> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
@@ -101,10 +110,10 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	return new Mesh(&vertices,&indices,textures, device);
 }
 
-std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
+std::vector<Texture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 
-	std::vector<Texture> textures;
+	std::vector<Texture*> textures;
 
 	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 	{
@@ -114,7 +123,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType
 		bool skip = false;
 		for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
 		{
-			if (std::strcmp(m_loadedTextures[j].GetTexData().path.C_Str(), str.C_Str()) == 0)
+			if (std::strcmp(m_loadedTextures[j]->GetTexData().path.C_Str(), str.C_Str()) == 0)
 			{
 				textures.push_back(m_loadedTextures[j]);
 				skip = true;
@@ -125,7 +134,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType
 
 		if (!skip)
 		{
-			Texture texture;
+			Texture* texture = new Texture();
 
 			std::string filepath = std::string(str.data);
 
@@ -141,10 +150,10 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType
 
 			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);
 
-			texture.LoadTextureFromFile(device, context, wc_path);
+			texture->LoadTextureFromFile(device, context, wc_path);
 			
 			//texture.SetFinalPath(wc_path);
-			texture.SetPath(str);
+			texture->SetPath(str);
 			textures.push_back(texture);
 			m_loadedTextures.push_back(texture);
 		}

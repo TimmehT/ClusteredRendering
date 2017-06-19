@@ -6,6 +6,7 @@
 #include "WICTextureLoader.h"
 #include "Model.h"
 #include "Texture.h"
+#include "Shader.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -101,6 +102,11 @@ InputManager g_input;
 
 Model g_sponza;
 Texture g_sponzaTexture;
+
+Shader* g_vs;
+Shader* g_ps;
+
+
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -535,6 +541,12 @@ bool LoadContent()
 
 	SafeRelease(pixelShaderBlob);
 
+	g_vs = new Shader(g_d3dDevice, g_d3dDeviceContext);
+	g_vs->LoadShaderFromFile(VertexShader, L"../data/shaders/SimpleVertexShader.hlsl", "SimpleVertexShader", "latest");
+
+	g_ps = new Shader(g_d3dDevice, g_d3dDeviceContext);
+	g_ps->LoadShaderFromFile(PixelShader, L"../data/shaders/SimplePixelShader.hlsl", "SimplePixelShader", "latest");
+
 	// Setup the projection matrix.
 	RECT clientRect;
 	GetClientRect(g_windowHandle, &clientRect);
@@ -773,7 +785,8 @@ void UnloadContent()
 	SafeRelease(g_d3dInputLayout);
 	SafeRelease(g_d3dVertexShader);
 	SafeRelease(g_d3dPixelShader);
-	//SafeDelete(g_sponza);
+	SafeDelete(g_vs);
+	SafeDelete(g_ps);
 
 }
 
@@ -1024,18 +1037,19 @@ void Render()
 	const UINT offset = 0;
 
 	//g_d3dDeviceContext->IASetVertexBuffers(0, 1, &g_d3dVertexBuffer, &vertexStride, &offset);
-	g_d3dDeviceContext->IASetInputLayout(g_d3dInputLayout);
+	//g_d3dDeviceContext->IASetInputLayout(g_d3dInputLayout);
 	//g_d3dDeviceContext->IASetIndexBuffer(g_d3dIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
+	//g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
+	g_vs->Push();
 	g_d3dDeviceContext->VSSetConstantBuffers(0, 3, g_d3dConstantBuffers);
 
 	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
 	g_d3dDeviceContext->RSSetViewports(1, &g_viewport);
 
-	g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
-
+	//g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
+	g_ps->Push();
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 	//g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_tex);
 	//g_sponzaTexture.PSSetSRV(g_d3dDeviceContext, 0);

@@ -17,7 +17,7 @@ struct Material
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture> textureList, ID3D11Device* device);
+	Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture*> textureList, ID3D11Device* device);
 	~Mesh();
 	
 	void Render(ID3D11DeviceContext* context);
@@ -35,7 +35,7 @@ private:
 	unsigned int m_vertexOffset;
 	unsigned int m_vertexStride;
 
-	std::vector<Texture> textures;
+	std::vector<Texture*> textures;
 
 
 
