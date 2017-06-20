@@ -7,11 +7,11 @@ struct TextureData
 	std::string type;
 };
 
-class Texture
+class CTexture
 {
 public:
-	Texture();
-	~Texture();
+	CTexture();
+	~CTexture();
 
 	bool LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* path);
 	void PSSetSRV(ID3D11DeviceContext* context, unsigned int slot);

@@ -20,6 +20,24 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Data\Shaders\Pixel">
+      <UniqueIdentifier>{0dd024dd-b4aa-4901-8467-cacef41ff0d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Shaders\Vertex">
+      <UniqueIdentifier>{4e07270d-2b6a-4293-a75b-2be03c5f9f73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Shaders\Compute">
+      <UniqueIdentifier>{3812e5a9-1588-4f2b-a1e0-ebc101590fc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Shaders\Domain">
+      <UniqueIdentifier>{22da8dd7-ac46-48b4-94f3-5b140887ead8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Shaders\Hull">
+      <UniqueIdentifier>{82e2dd8e-3655-42f8-a23a-c5f21b24340d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Shaders\Geometry">
+      <UniqueIdentifier>{3b4499c5-fbf8-44e7-a2eb-84960f5b569e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\DirectXPCH.cpp">
@@ -55,16 +73,19 @@
     <ClCompile Include="src\WICTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Texture.cpp">
+    <ClCompile Include="src\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Shader.cpp">
+    <ClCompile Include="src\Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,9 +111,6 @@
     <ClInclude Include="inc\Direct3DManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Vertex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inc\InputManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -105,25 +123,34 @@
     <ClInclude Include="inc\WICTextureLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inc\Model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\Vert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\CMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\CTexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="data\shaders\SimpleVertexShader.hlsl">
-      <Filter>Data\Shaders</Filter>
+    <FxCompile Include="data\shaders\LightingPixelShader.hlsl">
+      <Filter>Data\Shaders\Pixel</Filter>
     </FxCompile>
     <FxCompile Include="data\shaders\SimplePixelShader.hlsl">
-      <Filter>Data\Shaders</Filter>
+      <Filter>Data\Shaders\Pixel</Filter>
+    </FxCompile>
+    <FxCompile Include="data\shaders\SimpleVertexShader.hlsl">
+      <Filter>Data\Shaders\Vertex</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

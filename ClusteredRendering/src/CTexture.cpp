@@ -1,13 +1,13 @@
 #include <DirectXPCH.h>
-#include "Texture.h"
+#include "CTexture.h"
 #include "WICTextureLoader.h"
 
-Texture::Texture()
+CTexture::CTexture()
 {
 	m_textureSRV = nullptr;
 }
 
-Texture::~Texture()
+CTexture::~CTexture()
 {
 	if (m_textureSRV)
 	{
@@ -15,7 +15,7 @@ Texture::~Texture()
 	}
 }
 
-bool Texture::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* path)
+bool CTexture::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* path)
 {
 	HRESULT hr;
 
@@ -28,23 +28,23 @@ bool Texture::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* con
 	return true;
 }
 
-void Texture::PSSetSRV(ID3D11DeviceContext* context, unsigned int slot)
+void CTexture::PSSetSRV(ID3D11DeviceContext* context, unsigned int slot)
 {
 	context->PSSetShaderResources(slot, 1, &m_textureSRV);
 }
 
-const TextureData & Texture::GetTexData()
+const TextureData & CTexture::GetTexData()
 {
 	// TODO: insert return statement here
 	return m_texData;
 }
 
-void Texture::SetPath(aiString &path)
+void CTexture::SetPath(aiString &path)
 {
 	m_texData.path = path;
 }
 
-void Texture::SetFinalPath(const wchar_t* path)
+void CTexture::SetFinalPath(const wchar_t* path)
 {
-	wcscpy_s(&m_texData.finalPath,MAX_PATH, path);
+	wcscpy_s(&m_texData.finalPath, MAX_PATH, path);
 }

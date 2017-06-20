@@ -1,36 +1,37 @@
-#include "DirectXPCH.h"
-#include "Mesh.h"
+#include <DirectXPCH.h>
+#include "CMesh.h"
 
-Mesh::Mesh(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, std::vector<Texture*> textureList, ID3D11Device* device)
+
+CMesh::CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, std::vector<CTexture*> textureList, ID3D11Device* device)
 {
 	m_indexBuffer = nullptr;
 	m_vertexBuffer = nullptr;
 	m_numVerts = vertexList->size();
 	m_numIndices = indexList->size();
-	m_vertexStride = sizeof(Vertex);
+	m_vertexStride = sizeof(Vert);
 	m_vertexOffset = 0;
 	textures = textureList;
 
 	InitBuffers(vertexList, indexList, device);
 }
 
-Mesh::~Mesh()
+CMesh::~CMesh()
 {
 	if (m_indexBuffer)
 	{
 		SafeRelease(m_indexBuffer);
 	}
-	
-	if(m_vertexBuffer)
+
+	if (m_vertexBuffer)
 	{
 		SafeRelease(m_vertexBuffer);
 	}
 
-	
-	
+
+
 }
 
-void Mesh::Render(ID3D11DeviceContext* context)
+void CMesh::Render(ID3D11DeviceContext* context)
 {
 	context->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &m_vertexOffset);
 	context->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -39,13 +40,13 @@ void Mesh::Render(ID3D11DeviceContext* context)
 	{
 		textures[0]->PSSetSRV(context, 0);
 	}
-	
+
 
 	context->DrawIndexed(m_numIndices, 0, 0);
-	
+
 }
 
-void Mesh::InitBuffers(std::vector<Vertex>* vertexList, std::vector<unsigned int>* indexList, ID3D11Device* device)
+void CMesh::InitBuffers(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, ID3D11Device* device)
 {
 
 	// Create an initialize the vertex buffer.
@@ -84,7 +85,7 @@ void Mesh::InitBuffers(std::vector<Vertex>* vertexList, std::vector<unsigned int
 	}
 }
 
-void Mesh::InitTextures(std::vector<Texture> textureList, ID3D11Device * device, ID3D11DeviceContext * context)
+void CMesh::InitTextures(std::vector<CTexture> textureList, ID3D11Device * device, ID3D11DeviceContext * context)
 {
 	for (unsigned int i = 0; i < textureList.size(); i++)
 	{

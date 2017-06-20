@@ -1,5 +1,5 @@
 #pragma once
-#include "Mesh.h"
+#include "CMesh.h"
 
 class Model
 {
@@ -13,12 +13,10 @@ public:
 private:
 
 	void ProecessNode(aiNode* node, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context);
-	Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context);
-	std::vector<Texture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context);
+	CMesh* ProcessMesh(aiMesh* mesh, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context);
+	std::vector<CTexture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context);
 
-	std::vector<Mesh*> m_meshList;
-	std::vector<Texture*> m_loadedTextures;
+	std::vector<CMesh*> m_meshList;
+	std::vector<CTexture*> m_loadedTextures;
 	std::string directory;
-
-	
 };

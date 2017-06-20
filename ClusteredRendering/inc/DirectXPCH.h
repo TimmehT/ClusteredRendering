@@ -50,9 +50,6 @@
 
 #pragma comment(lib, "assimp-vc140-mt.lib")
 
-// DirectXTex
-//#include <DDSTextureLoader.h>
-//#include <WICTextureLoader.h>
 
 using namespace DirectX;
 

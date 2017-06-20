@@ -13,7 +13,7 @@ class Camera
 public:
 	Camera();
 	~Camera();
-
+	
 	void Update();
 	void SetLens(float fov, float nearPlane, float farPlane, unsigned int width, unsigned int height);
 	void Pitch(float angle);
@@ -37,6 +37,5 @@ private:
 	float m_camSpeed;
 	float m_camSensitivity;
 	CameraData m_camData;
-
 
 };

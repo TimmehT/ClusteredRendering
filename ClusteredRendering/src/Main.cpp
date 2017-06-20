@@ -5,7 +5,7 @@
 #include "Keycodes.h"
 #include "WICTextureLoader.h"
 #include "Model.h"
-#include "Texture.h"
+#include "CTexture.h"
 #include "Shader.h"
 
 // Define window & VSync Setting
@@ -45,7 +45,6 @@ ID3D11VertexShader* g_d3dVertexShader = nullptr;
 ID3D11PixelShader* g_d3dPixelShader = nullptr;
 
 ID3D11SamplerState* g_d3dSamplerState = nullptr;
-//ID3D11ShaderResourceView* g_tex = nullptr;
 
 float lastValue = 0;
 float diff = 0;
@@ -63,8 +62,6 @@ ID3D11Buffer* g_d3dConstantBuffers[NumConstantBuffers];
 
 // Demo parameteres
 XMMATRIX g_worldMatrix;
-XMMATRIX g_viewMatrix;
-XMMATRIX g_projectionMatrix;
 
 // Vertex data for a colored cube
 struct VertexPosColor
@@ -101,11 +98,9 @@ Camera g_cam;
 InputManager g_input;
 
 Model g_sponza;
-Texture g_sponzaTexture;
 
 Shader* g_vs;
 Shader* g_ps;
-
 
 
 // Forward declarations
@@ -418,42 +413,6 @@ bool LoadContent()
 {
 	assert(g_d3dDevice);
 
-	// Create an initialize the vertex buffer.
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
-
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.ByteWidth = sizeof(VertexPosColor) * _countof(g_vertices);
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-
-	D3D11_SUBRESOURCE_DATA resourceData;
-	ZeroMemory(&resourceData, sizeof(D3D11_SUBRESOURCE_DATA));
-
-	resourceData.pSysMem = g_vertices;
-
-	HRESULT hr = g_d3dDevice->CreateBuffer(&vertexBufferDesc, &resourceData, &g_d3dVertexBuffer);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	// Create and initialize the index buffer.
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
-
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.ByteWidth = sizeof(unsigned int) * _countof(g_indicies);
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	resourceData.pSysMem = g_indicies;
-
-	hr = g_d3dDevice->CreateBuffer(&indexBufferDesc, &resourceData, &g_d3dIndexBuffer);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
 	// Create the constant buffers for the variables defined in the vertex shader.
 	D3D11_BUFFER_DESC constantBufferDesc;
 	ZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
@@ -463,7 +422,7 @@ bool LoadContent()
 	constantBufferDesc.CPUAccessFlags = 0;
 	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 
-	hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffers[CB_Application]);
+	HRESULT hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffers[CB_Application]);
 	if (FAILED(hr))
 	{
 		return false;
@@ -478,68 +437,6 @@ bool LoadContent()
 	{
 		return false;
 	}
-
-	// Load the shaders
-	//g_d3dVertexShader = LoadShader<ID3D11VertexShader>( L"../data/shaders/SimpleVertexShader.hlsl", "SimpleVertexShader", "latest" );
-	//g_d3dPixelShader = LoadShader<ID3D11PixelShader>( L"../data/shaders/SimplePixelShader.hlsl", "SimplePixelShader", "latest" );
-
-	// Load the compiled vertex shader.
-	ID3DBlob* vertexShaderBlob;
-#if _DEBUG
-	LPCWSTR compiledVertexShaderObject = L"SimpleVertexShader_d.cso";
-#else
-	LPCWSTR compiledVertexShaderObject = L"SimpleVertexShader.cso";
-#endif
-
-	hr = D3DReadFileToBlob(compiledVertexShaderObject, &vertexShaderBlob);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	hr = g_d3dDevice->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), nullptr, &g_d3dVertexShader);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	// Create the input layout for the vertex shader.
-	D3D11_INPUT_ELEMENT_DESC vertexLayoutDesc[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-
-	hr = g_d3dDevice->CreateInputLayout(vertexLayoutDesc, _countof(vertexLayoutDesc), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &g_d3dInputLayout);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	SafeRelease(vertexShaderBlob);
-
-	// Load the compiled pixel shader.
-	ID3DBlob* pixelShaderBlob;
-#if _DEBUG
-	LPCWSTR compiledPixelShaderObject = L"SimplePixelShader_d.cso";
-#else
-	LPCWSTR compiledPixelShaderObject = L"SimplePixelShader.cso";
-#endif
-
-	hr = D3DReadFileToBlob(compiledPixelShaderObject, &pixelShaderBlob);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	hr = g_d3dDevice->CreatePixelShader(pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize(), nullptr, &g_d3dPixelShader);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	SafeRelease(pixelShaderBlob);
 
 	g_vs = new Shader(g_d3dDevice, g_d3dDeviceContext);
 	g_vs->LoadShaderFromFile(VertexShader, L"../data/shaders/SimpleVertexShader.hlsl", "SimpleVertexShader", "latest");
@@ -558,28 +455,13 @@ bool LoadContent()
 
 	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
 
-	g_projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(45.0f), clientWidth / clientHeight, 0.1f, 3000.0f);
-
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_cam.GetCamData().projMat, 0, 0);
-
-	
-
-	/*hr = CreateWICTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png", nullptr, &g_tex);
-	if (FAILED(hr))
-	{
-		return false;
-	}*/
-
-	if (!g_sponzaTexture.LoadTextureFromFile(g_d3dDevice, g_d3dDeviceContext, L"../data/models/crytek-sponza/textures/background.png"))
-	{
-		return false;
-	}
 
 	// Create a sampler state for texture sampling in the pixel shader
 	D3D11_SAMPLER_DESC samplerDesc;
 	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
 
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -600,179 +482,12 @@ bool LoadContent()
 		return false;
 	}
 
-	//g_sponza = new Model();
-
 	if (!g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj", g_d3dDevice, g_d3dDeviceContext))
 	{
 		return false;
 	}
 
 	return true;
-}
-
-// Get the lates profile for the specified shader type
-template<class ShaderClass>
-std::string GetLatestProfile();
-
-template<>
-std::string GetLatestProfile<ID3D11VertexShader>()
-{
-	assert(g_d3dDevice);
-
-	// Query the current feature level
-	D3D_FEATURE_LEVEL featureLevel = g_d3dDevice->GetFeatureLevel();
-
-	switch (featureLevel)
-	{
-	case D3D_FEATURE_LEVEL_11_1:
-	{
-		return "vs_5_1";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_11_0:
-	{
-		return "vs_5_0";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_10_1:
-	{
-		return "vs_4_1";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_10_0:
-	{
-		return "vs_4_0";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_9_3:
-	{
-		return "vs_4_0_level_9_3";
-	}
-	case D3D_FEATURE_LEVEL_9_2:
-	case D3D_FEATURE_LEVEL_9_1:
-	{
-		return "vs_4_0_level_9_1";
-	}
-	break;
-	}// switch( featureLevel)
-
-	return "";
-}
-
-template <>
-std::string GetLatestProfile<ID3D11PixelShader>()
-{
-	assert(g_d3dDevice);
-
-	// Query the current feature level
-	D3D_FEATURE_LEVEL featureLevel = g_d3dDevice->GetFeatureLevel();
-
-	switch (featureLevel)
-	{
-	case D3D_FEATURE_LEVEL_11_1:
-	{
-		return "ps_5_1";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_11_0:
-	{
-		return "ps_5_0";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_10_1:
-	{
-		return "ps_4_1";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_10_0:
-	{
-		return "ps_4_0";
-	}
-	break;
-	case D3D_FEATURE_LEVEL_9_3:
-	{
-		return "ps_4_0_level_9_3";
-	}
-	case D3D_FEATURE_LEVEL_9_2:
-	case D3D_FEATURE_LEVEL_9_1:
-	{
-		return "ps_4_0_level_9_1";
-	}
-	break;
-	}// switch( featureLevel)
-
-	return "";
-}
-
-template < class ShaderClass >
-ShaderClass* CreateShader(ID3DBlob* pShaderBlob, ID3D11ClassLinkage* pClassLinkage);
-
-template<>
-ID3D11VertexShader* CreateShader<ID3D11VertexShader>(ID3DBlob* pShaderBlob, ID3D11ClassLinkage* pClassLinkage)
-{
-	assert(g_d3dDevice);
-	assert(pShaderBlob);
-
-	ID3D11VertexShader* pVertexShader = nullptr;
-	g_d3dDevice->CreateVertexShader(pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize(), pClassLinkage, &pVertexShader);
-
-	return pVertexShader;
-}
-
-template<>
-ID3D11PixelShader* CreateShader<ID3D11PixelShader>(ID3DBlob* pShaderBlob, ID3D11ClassLinkage* pClassLinkage)
-{
-	assert(g_d3dDevice);
-	assert(pShaderBlob);
-
-	ID3D11PixelShader* pPixelShader = nullptr;
-	g_d3dDevice->CreatePixelShader(pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize(), pClassLinkage, &pPixelShader);
-
-	return pPixelShader;
-}
-
-template< class ShaderClass >
-ShaderClass* LoadShader(const std::wstring& fileName, const std::string& entryPoint, const std::string& _profile)
-{
-	ID3DBlob* pShaderBlob = nullptr;
-	ID3DBlob* pErrorBlob = nullptr;
-	ShaderClass* pShader = nullptr;
-
-	std::string profile = _profile;
-	if (profile == "latest")
-	{
-		profile = GetLatestProfile<ShaderClass>();
-	}
-
-	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if _DEBUG
-	flags |= D3DCOMPILE_DEBUG;
-#endif
-
-	HRESULT hr = D3DCompileFromFile(fileName.c_str(), nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), profile.c_str(),
-		flags, 0, &pShaderBlob, &pErrorBlob);
-
-	if (FAILED(hr))
-	{
-		if (pErrorBlob)
-		{
-			std::string errorMessage = (char*)pErrorBlob->GetBufferPointer();
-			OutputDebugStringA(errorMessage.c_str());
-
-			SafeRelease(pShaderBlob);
-			SafeRelease(pErrorBlob);
-		}
-
-		return false;
-	}
-
-	pShader = CreateShader<ShaderClass>(pShaderBlob, nullptr);
-
-	SafeRelease(pShaderBlob);
-	SafeRelease(pErrorBlob);
-
-	return pShader;
 }
 
 void UnloadContent()
@@ -983,24 +698,11 @@ void Update(float deltaTime)
 			
 		}
 	}
-	XMVECTOR eyePosition = XMVectorSet(0, 0, -10, 1);
-	XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
-	XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);
-	/*g_cam.SetPosition(0.0f, 0.0f, -10.0f);
-	g_cam.LookAt(g_cam.GetPositionXM(), focusPoint, upDirection);
-	g_cam.UpdateViewMatrix();*/
 	g_cam.Update();
-	g_viewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+
+	 //EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat);
+
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Frame], 0, nullptr, &g_cam.GetCamData().viewMat, 0, 0);
-
-
-	static float angle = 0.0f;
-	angle += 90.0f * deltaTime;
-	XMVECTOR rotationAxis = XMVectorSet(0, 1, 1, 0);
-	//g_worldMatrix = XMMatrixIdentity();
-	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
-	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
-	//g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
 
 	g_input.Reset();
 }
@@ -1033,39 +735,30 @@ void Render()
 
 	Clear(Colors::CornflowerBlue, 1.0f, 0);
 
-	const UINT vertexStride = sizeof(VertexPosColor);
-	const UINT offset = 0;
-
-	//g_d3dDeviceContext->IASetVertexBuffers(0, 1, &g_d3dVertexBuffer, &vertexStride, &offset);
-	//g_d3dDeviceContext->IASetInputLayout(g_d3dInputLayout);
-	//g_d3dDeviceContext->IASetIndexBuffer(g_d3dIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//g_d3dDeviceContext->VSSetShader(g_d3dVertexShader, nullptr, 0);
 	g_vs->Push();
 	g_d3dDeviceContext->VSSetConstantBuffers(0, 3, g_d3dConstantBuffers);
 
 	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
 	g_d3dDeviceContext->RSSetViewports(1, &g_viewport);
 
-	//g_d3dDeviceContext->PSSetShader(g_d3dPixelShader, nullptr, 0);
 	g_ps->Push();
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
-	//g_d3dDeviceContext->PSSetShaderResources(0, 1, &g_tex);
-	//g_sponzaTexture.PSSetSRV(g_d3dDeviceContext, 0);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
-	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
-	XMMATRIX rot = XMMatrixRotationX(0.0f);
+
+	XMMATRIX translation = XMMatrixTranslation(0.0f, -2.0f, 0.0f);
+	XMMATRIX rot = XMMatrixRotationY(XMConvertToRadians(90.0f));
 	XMMATRIX scale = XMMatrixScaling(0.01f, 0.01f, 0.01f);
 	g_worldMatrix = XMMatrixIdentity();
-	g_worldMatrix = translation * rot * scale;
+	g_worldMatrix = scale * rot * translation;
+	//g_worldMatrix = scale * translation * rot;
 	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
-	//g_worldMatrix = XMMatrixRotationAxis(rotationAxis, XMConvertToRadians(angle));
+
 	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
+
 	g_sponza.Render(g_d3dDeviceContext);
-	//g_d3dDeviceContext->DrawIndexed(_countof(g_indicies), 0, 0);
 
 	Present(g_enableVSync);
 }

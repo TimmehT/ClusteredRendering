@@ -1,6 +1,7 @@
-#include "DirectXPCH.h"
+#include <DirectXPCH.h>
 #include "Model.h"
-#include "Texture.h"
+
+
 
 Model::Model()
 {
@@ -17,9 +18,6 @@ Model::~Model()
 	{
 		SafeDelete(m_loadedTextures[j]);
 	}
-
-	
-
 }
 
 bool Model::LoadModel(const char* file, ID3D11Device* device, ID3D11DeviceContext* context)
@@ -63,16 +61,16 @@ void Model::ProecessNode(aiNode * node, const aiScene* scene, ID3D11Device* devi
 	}
 }
 
-Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* device, ID3D11DeviceContext* context)
+CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* device, ID3D11DeviceContext* context)
 {
-	std::vector<Vertex> vertices;
+	std::vector<Vert> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<Texture*> textures;
+	std::vector<CTexture*> textures;
 	
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
-		Vertex vertex;
+		Vert vertex;
 		vertex.position = XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 		vertex.normal = XMFLOAT3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 
@@ -98,7 +96,7 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<Texture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse",device, context);
+		std::vector<CTexture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse",device, context);
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 		/*std::vector<TexturePT> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
@@ -107,13 +105,13 @@ Mesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* dev
 		std::vector<TexturePT> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());*/
 	}
-	return new Mesh(&vertices,&indices,textures, device);
+	return new CMesh(&vertices,&indices,textures, device);
 }
 
-std::vector<Texture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
+std::vector<CTexture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 
-	std::vector<Texture*> textures;
+	std::vector<CTexture*> textures;
 
 	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
 	{
@@ -134,7 +132,7 @@ std::vector<Texture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureTyp
 
 		if (!skip)
 		{
-			Texture* texture = new Texture();
+			CTexture* texture = new CTexture();
 
 			std::string filepath = std::string(str.data);
 
