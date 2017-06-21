@@ -96,14 +96,15 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<CTexture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse",device, context);
+		std::vector<CTexture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", device, context);
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-		/*std::vector<TexturePT> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		std::vector<CTexture*> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", device, context);
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-		std::vector<TexturePT> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
-		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());*/
+		std::vector<CTexture*> normalMaps = LoadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", device, context);
+		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
 	}
 	return new CMesh(&vertices,&indices,textures, device);
 }

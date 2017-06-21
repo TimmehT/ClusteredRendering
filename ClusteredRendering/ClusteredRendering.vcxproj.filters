@@ -38,6 +38,9 @@
     <Filter Include="Data\Shaders\Geometry">
       <UniqueIdentifier>{3b4499c5-fbf8-44e7-a2eb-84960f5b569e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Data\Shaders\Helpers">
+      <UniqueIdentifier>{8a50244f-b7a7-41de-aa0e-8445ccfdf5dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\DirectXPCH.cpp">
@@ -152,5 +155,13 @@
     <FxCompile Include="data\shaders\SimpleVertexShader.hlsl">
       <Filter>Data\Shaders\Vertex</Filter>
     </FxCompile>
+    <FxCompile Include="data\shaders\LightingVertexShader.hlsl">
+      <Filter>Data\Shaders\Vertex</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="data\shaders\LightHelper.hlsli">
+      <Filter>Data\Shaders\Helpers</Filter>
+    </None>
   </ItemGroup>
 </Project>

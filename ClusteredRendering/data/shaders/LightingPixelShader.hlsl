@@ -1,84 +1,58 @@
+#include "LightHelper.hlsli"
 
 
-struct DirectionalLight
+Texture2D diffuseTexture : register(t0);
+SamplerState SampleType : register(s0);
+
+cbuffer MaterialProperties : register(b0)
 {
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-    float3 Direction;
-    float Pad;
+    Material mat;
 };
 
-struct PointLight
+cbuffer LightProperties : register(b1)
 {
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-
-    float3 Position;
-    float Range;
-    
-    float3 Attenuation;
-    float Pad;
+    float4 eyePosW;
+    PointLight lights[8];
 };
 
-struct SpotLight
+struct PixelShaderInput
 {
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-
-    float3 Position;
-    float Range;
-
-    float3 Direction;
-    float Spot;
-
-    float3 Attenuation;
-    float Pad;
+    float3 posW : POSITION;
+    float3 normalW : NORMAL;
+    float2 tex : TEXCOORD0;
 };
 
-struct Material
+float4 main(PixelShaderInput IN) : SV_TARGET
 {
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-    float4 Emmisive;
-};
+    IN.normalW = normalize(IN.normalW);
 
-//float4 ComputeDiffuse()
-//{
-//    return float4;
-//}
+    float3 toEye = eyePosW.xyz - IN.posW;
 
-//float4 ComputeSpecular()
-//{
-//    return float4;
-//}
+    float distToEye = length(toEye);
 
-float ComputeAttenuation(float3 atten, float d)
-{
-    return 1.0f / dot(atten, float3(1.0f, d, d * d));
-}
+    float4 texColor = diffuseTexture.Sample(SampleType, IN.tex);
+    clip(texColor.a - 0.1f);
 
-void ComputeDirectionalLight()
-{
-    
-}
+    float4 litColor = texColor;
+    if (8 > 0)
+    {
+        float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        float4 specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-void ComputePointLight()
-{
-    
-}
+        [unroll]
+        for (int i = 0; i < 8; i++)
+        {
+            float4 A, D, S;
+            ComputePointLight(mat, lights[i],IN.posW, IN.normalW, toEye, A, D, S);
 
-void ComputeSpotLight()
-{
-    
-}
+            ambient += A;
+            diffuse += D;
+            specular += S;
+        }
 
+        litColor = texColor * (ambient + diffuse) + specular;
+    }
 
-
-float4 main() : SV_TARGET
-{
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+    return litColor;
 }
