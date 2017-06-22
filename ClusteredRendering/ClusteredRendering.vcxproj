@@ -141,6 +141,7 @@
     <ClCompile Include="src\GraphicsManager.cpp" />
     <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\Light.cpp" />
+    <ClCompile Include="src\LightManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Model.cpp" />
     <ClCompile Include="src\Shader.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="inc\InputManager.h" />
     <ClInclude Include="inc\Keycodes.h" />
     <ClInclude Include="inc\Light.h" />
+    <ClInclude Include="inc\LightManager.h" />
     <ClInclude Include="inc\Model.h" />
     <ClInclude Include="inc\Shader.h" />
     <ClInclude Include="inc\TextureManager.h" />

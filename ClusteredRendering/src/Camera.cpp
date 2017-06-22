@@ -23,10 +23,13 @@ void Camera::Update()
 	XMVECTOR look = FloatToVector(m_look);
 	XMVECTOR up = FloatToVector(m_up);
 
+	
+
+	XMStoreFloat4x4(&m_camData.viewMat,	XMMatrixLookAtLH(pos, pos + look, up));
+
 	XMMATRIX view = Float4X4ToMatrix(m_camData.viewMat);
 	XMMATRIX proj = Float4X4ToMatrix(m_camData.projMat);
 
-	XMStoreFloat4x4(&m_camData.viewMat,	XMMatrixLookAtLH(pos, pos + look, up));
 	XMStoreFloat4x4(&m_camData.viewProjMat, view * proj);
 }
 
@@ -113,9 +116,14 @@ void Camera::MoveRight(float dt)
 	XMStoreFloat3(&m_position, pos);
 }
 
-const CameraData & Camera::GetCamData()
+CameraData & Camera::GetCamData()
 {
 	return m_camData;
+}
+
+XMFLOAT3 Camera::GetPosition()
+{
+	return m_position;
 }
 
 

@@ -7,6 +7,8 @@
 #include "Model.h"
 #include "CTexture.h"
 #include "Shader.h"
+//#include "Light.h"
+#include "LightManager.h"
 
 // Define window & VSync Setting
 unsigned __int16 g_windowWidth = 1280;
@@ -60,8 +62,15 @@ enum ConstantBuffer
 
 ID3D11Buffer* g_d3dConstantBuffers[NumConstantBuffers];
 
+struct cbPerObject
+{
+	XMMATRIX g_worldMatrix;
+	XMMATRIX g_invWorld;
+	//XMMATRIX g_wvp;
+};
 // Demo parameteres
-XMMATRIX g_worldMatrix;
+
+cbPerObject perObject;
 
 // Vertex data for a colored cube
 struct VertexPosColor
@@ -102,12 +111,27 @@ Model g_sponza;
 Shader* g_vs;
 Shader* g_ps;
 
+float renderTime;
+float prevRenderTime;
+
+XMMATRIX proj;
+XMMATRIX view;
+
+
+ID3D11Buffer* cbLightBuffer;
+
+
+//DirectionalLight light;
+Light light;
+struct cbLight
+{
+	Light light;
+};
+
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-template< class ShaderClass >
-ShaderClass* LoadShader(const std::wstring& filename, const std::string& entryPoint, const std::string& profile);
 
 bool LoadContent();
 void UnloadContent();
@@ -422,6 +446,15 @@ bool LoadContent()
 	constantBufferDesc.CPUAccessFlags = 0;
 	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 
+	// Create the constant buffers for the variables defined in the vertex shader.
+	D3D11_BUFFER_DESC constantBufferDesc2;
+	ZeroMemory(&constantBufferDesc2, sizeof(D3D11_BUFFER_DESC));
+
+	constantBufferDesc2.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc2.ByteWidth = sizeof(cbPerObject);
+	constantBufferDesc2.CPUAccessFlags = 0;
+	constantBufferDesc2.Usage = D3D11_USAGE_DEFAULT;
+
 	HRESULT hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffers[CB_Application]);
 	if (FAILED(hr))
 	{
@@ -432,7 +465,7 @@ bool LoadContent()
 	{
 		return false;
 	}
-	hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffers[CB_Object]);
+	hr = g_d3dDevice->CreateBuffer(&constantBufferDesc2, nullptr, &g_d3dConstantBuffers[CB_Object]);
 	if (FAILED(hr))
 	{
 		return false;
@@ -455,7 +488,8 @@ bool LoadContent()
 
 	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
 
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &g_cam.GetCamData().projMat, 0, 0);
+	proj = XMMatrixTranspose(EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat));
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &proj, 0, 0);
 
 	// Create a sampler state for texture sampling in the pixel shader
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -487,11 +521,34 @@ bool LoadContent()
 		return false;
 	}
 
+	//light.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
+	//light.Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	//light.Diffuse = XMFLOAT4(2.0f, 1.0f, 1.0f, 1.0f);
+	//light.Specular = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 0.0f, 1.0f);
+	light.m_color = XMFLOAT4(2, 1, 1, 1);
+	light.m_specIntensity = 0.0f;
+	light.m_type = LightType::Directional;
+
+	
+	// Create the constant buffers for the variables defined in the vertex shader.
+	D3D11_BUFFER_DESC lightBufferDesc;
+	ZeroMemory(&lightBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightBufferDesc.ByteWidth = sizeof(cbLight);
+	lightBufferDesc.CPUAccessFlags = 0;
+	lightBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	hr = g_d3dDevice->CreateBuffer(&lightBufferDesc, nullptr, &cbLightBuffer);
+
 	return true;
 }
 
 void UnloadContent()
 {
+	SafeRelease(cbLightBuffer);
 	SafeRelease(g_d3dConstantBuffers[CB_Application]);
 	SafeRelease(g_d3dConstantBuffers[CB_Frame]);
 	SafeRelease(g_d3dConstantBuffers[CB_Object]);
@@ -645,27 +702,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Update(float deltaTime)
 {
-	
+	float mult = 1.0f;
 	if (g_input.Initialized())
 	{
+
+		if (g_input.KeyDown(VK_SHIFT))
+		{
+			mult = 2;
+		}
+		else
+			mult = 1;
+
 		if (g_input.KeyDown(VK_W))
 		{
-			g_cam.MoveForward(deltaTime);
+			g_cam.MoveForward(deltaTime * mult);
 		}
 
 		if (g_input.KeyDown(VK_S))
 		{
-			g_cam.MoveBackward(deltaTime);
+			g_cam.MoveBackward(deltaTime* mult);
 		}
 
 		if (g_input.KeyDown(VK_A))
 		{
-			g_cam.MoveLeft(deltaTime);
+			g_cam.MoveLeft(deltaTime* mult);
 		}
 
 		if (g_input.KeyDown(VK_D))
 		{
-			g_cam.MoveRight(deltaTime);
+			g_cam.MoveRight(deltaTime* mult);
 		}
 
 
@@ -700,9 +765,9 @@ void Update(float deltaTime)
 	}
 	g_cam.Update();
 
-	 //EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat);
+	 view = XMMatrixTranspose(EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat));
 
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Frame], 0, nullptr, &g_cam.GetCamData().viewMat, 0, 0);
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Frame], 0, nullptr, &view, 0, 0);
 
 	g_input.Reset();
 }
@@ -743,6 +808,10 @@ void Render()
 	g_d3dDeviceContext->RSSetViewports(1, &g_viewport);
 
 	g_ps->Push();
+	cbLight l;
+	l.light = light;
+	g_d3dDeviceContext->UpdateSubresource(cbLightBuffer, 0, nullptr, &l, 0, 0);
+	g_d3dDeviceContext->PSSetConstantBuffers(0, 1, &cbLightBuffer);
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
@@ -751,12 +820,15 @@ void Render()
 	XMMATRIX translation = XMMatrixTranslation(0.0f, -2.0f, 0.0f);
 	XMMATRIX rot = XMMatrixRotationY(XMConvertToRadians(90.0f));
 	XMMATRIX scale = XMMatrixScaling(0.01f, 0.01f, 0.01f);
-	g_worldMatrix = XMMatrixIdentity();
-	g_worldMatrix = scale * rot * translation;
+	perObject.g_worldMatrix = XMMatrixIdentity();
+	perObject.g_worldMatrix = scale * rot * translation;
+	
 	//g_worldMatrix = scale * translation * rot;
-	//g_worldMatrix = XMMatrixTranspose(g_worldMatrix);
+	perObject.g_worldMatrix = XMMatrixTranspose(perObject.g_worldMatrix);
+	perObject.g_invWorld = XMMatrixTranspose(XMMatrixInverse(nullptr, perObject.g_worldMatrix));
+	//perObject.g_wvp = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat)* EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat) * perObject.g_worldMatrix;
 
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &g_worldMatrix, 0, 0);
+	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &perObject, 0, 0);
 
 	g_sponza.Render(g_d3dDeviceContext);
 
@@ -787,14 +859,16 @@ void CaculateRenderStats()
 	if ((g_Timer.TotalTime() - timeElapsed) >= 1.0f)
 	{
 		float fps = (float)frameCount;
-		float frameRenderTime = 1000.0f / fps;
+		prevRenderTime = renderTime;
+		renderTime = 1000.0f / fps;
+		float var = std::abs(renderTime - prevRenderTime);
 
 
 		std::ostringstream outs;
 		outs.precision(6);
 		outs << g_windowName << "    "
-			<< "FPS: " << fps << "    "
-			<< "Frame Time: " << frameRenderTime << " (ms)";
+			<< "fps: " << fps << "    "
+			<< "ft: " << renderTime << " ms" << "    " << "var: +-" << var << " ms ";
 		SetWindowText(g_windowHandle, outs.str().c_str());
 
 

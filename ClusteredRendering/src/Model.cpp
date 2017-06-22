@@ -81,6 +81,9 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 		else
 			vertex.texcoord = XMFLOAT2(0.0f, 0.0f);
 
+		vertex.tangent = XMFLOAT3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+		vertex.bitangent = XMFLOAT3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+
 		vertices.push_back(vertex);
 	}
 

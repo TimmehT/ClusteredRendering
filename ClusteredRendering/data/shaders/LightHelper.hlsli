@@ -1,39 +1,27 @@
-struct DirectionalLight
-{
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-    float3 Direction;
-    float Pad;
-};
 
-struct PointLight
-{
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
+#define NUM_LIGHTS 8
 
-    float3 Position;
-    float Range;
-    
+#define POINT_LIGHT 0
+#define SPOT_LIGHT 1
+#define DIRECTIONAL_LIGHT 2
+
+struct Light
+{
+    float4 PositionWS;
+	//(16b)
+    float4 DirectionWS;
+	//(16b)
+    float4 Color;
+	//(16b)
     float3 Attenuation;
-    float Pad;
-};
-
-struct SpotLight
-{
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-
-    float3 Position;
+    float SpecIntensity;
+	//(16b)
     float Range;
-
-    float3 Direction;
-    float Spot;
-
-    float3 Attenuation;
-    float Pad;
+    float SpotAngle;
+    bool Enabled;
+    uint Type;
+	//(16b)
+	//(16 * 5 = 80b)
 };
 
 struct Material
@@ -44,128 +32,156 @@ struct Material
     float4 Emmisive;
 };
 
-float ComputeAttenuation(float val, float3 atten, float dist)
+struct LightingResult
 {
-    return val / dot(atten, float3(1.0f, dist, dist * dist));
+    float4 Diffuse;
+    float4 Specular;
+};
+
+float3 ComputeNormalMapping(float3x3 TBN, Texture2D tex, sampler s, float2 texc)
+{
+    float3 normalMap = tex.Sample(s, texc).xyz;
+    normalMap = (2.0f * normalMap) - 1.0f;
+
+    normalMap = mul(normalMap, TBN);
+    return normalize(normalMap);
 }
 
-float ComputeSpot(float3 lv, float3 dir, float angle)
+float4 ComputeDiffuse(Light light, float3 L, float3 N)
 {
-    return pow(max(dot(lv, dir), 0.0f), angle);
+    float NdotL = max(0, dot(N, L));
+    return light.Color * NdotL;
 }
 
-void ComputeDirectionalLight(Material mat, DirectionalLight light, float3 norm, float3 toEye,
-                                out float4 ambient, out float4 diffuse, out float4 spec)
+float4 ComputeSpecular(Light light, float3 L, float3 N, float3 V, float a)
 {
-    // Init outputs
-    ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float3 R = normalize(reflect(-L, N));
+    float RdotV = max(0, dot(R, V));
+
+    return light.Color * pow(RdotV, a);
+}
+
+float ComputeAttenuation(float val, float3 atten, float d)
+{
+    return val / (atten.x + atten.y * d + atten.z * d * d);
+}
+
+float ComputeSpotCone(Light light, float3 L)
+{
+    
+    float minCos = cos(radians(light.SpotAngle));
+    float maxCos = lerp(minCos, 1, 0.5f);
+    float cosAngle = dot(light.DirectionWS.xyz, -L);
+
+    return smoothstep(minCos, maxCos, cosAngle);
+}
+
+LightingResult ComputeDirectionalLight(Light light, Material mat, float3 V, float3 N )
+{
+
+    LightingResult result;
+    // Initialize outputs
+    result.Diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    
 
     // Get light vec
-    float3 lightVec = -light.Direction;
+    float3 L = -light.DirectionWS.xyz;
 
-    // Get ambient
-    ambient = mat.Ambient * light.Ambient;
+    result.Diffuse = ComputeDiffuse(light, L, N);
+    result.Specular = ComputeSpecular(light, L, N, V, mat.Specular.w);
 
-    // Add diff & spec provided surface is in line of sight
-    float diffFactor = dot(lightVec, norm);
-
-    // Flatten to avoid dynamic branching
-    [flatten]
-    if (diffFactor > 0.0f)
-    {
-        float3 v = reflect(-lightVec, norm);
-        float specFactor = pow(max(dot(v, toEye), 0.0f), mat.Specular.w);
-
-        diffuse = diffFactor * mat.Diffuse * light.Diffuse;
-        spec = specFactor * mat.Specular * light.Specular;
-    }
+    return result;
 }
 
-void ComputePointLight(Material mat, PointLight light, float3 surfPos, float3 surfNorm, float3 toEye,
-                        out float4 ambient, out float4 diffuse, out float4 specular)
+LightingResult ComputePointLight(Light light, Material mat, float3 V, float3 P, float3 N)
 {
+
+    LightingResult result;
     // Init outputs
-    ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    result.Diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Get vector from surface to light
-    float3 lightVec = light.Position - surfPos;
+    float3 L = light.PositionWS.xyz - P;
 
     // Get distance from surface to light
-    float dist = length(lightVec);
-
-    // Check if surface is in range
-    if (dist > light.Range)
-        return;
+    float distance = length(L);
 
     // Normalize light vector
-    lightVec = normalize(lightVec);
+    L = L / distance;
 
-    // Get ambient 
-    ambient = mat.Ambient * light.Ambient;
+    // Compute attenuation
+    float attenuation = ComputeAttenuation(1.0f, light.Attenuation, distance);
 
-    // Add diffuse and specular term, provided the surface is in line of sight of light
-    float diffuseFactor = dot(lightVec, surfNorm);
+    result.Diffuse = ComputeDiffuse(light, L, N) * attenuation;
+    result.Specular = ComputeSpecular(light, L, N, V, mat.Specular.w) * attenuation;
 
-    [flatten]
-    if (diffuseFactor > 0.0f)
-    {
-        float3 v = reflect(-lightVec, surfNorm);
-        float specFactor = pow(max(dot(v, toEye), 0.0f), mat.Specular.w);
-
-        diffuse = diffuseFactor * mat.Diffuse * light.Diffuse;
-        specular = specFactor * mat.Specular * light.Specular;
-    }
-
-    diffuse *= ComputeAttenuation(1.0f, light.Attenuation, dist);
-    specular *= ComputeAttenuation(1.0f, light.Attenuation, dist);
-    
+    return result;
 }
 
-void ComputeSpotLight(Material mat, SpotLight light, float3 surfPos, float3 surfNorm, float3 toEye,
-                        out float4 ambient, out float4 diffuse, out float4 specular)
+LightingResult ComputeSpotLight(Light light, Material mat, float3 V, float3 P, float3 N)
 {
+    LightingResult result;
+
     // Init outputs
-    ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    result.Diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Get vector from surface to light
-    float3 lightVec = light.Position - surfPos;
+    float3 L = light.PositionWS.xyz - P;
 
     // Get distance from surface to light
-    float dist = length(lightVec);
-
-    // Check if surface is in range
-    if (dist > light.Range)
-        return;
+    float distance = length(L);
 
     // Normalize light vector
-    lightVec = normalize(lightVec);
+    L = L / distance;
 
-    // Get ambient 
-    ambient = mat.Ambient * light.Ambient;
+    float attenuation = ComputeAttenuation(1.0f, light.Attenuation, distance);
+    float intensity = ComputeSpotCone(light, L);
 
-    // Add diffuse and specular term, provided the surface is in line of sight of light
-    float diffuseFactor = dot(lightVec, surfNorm);
+    result.Diffuse = ComputeDiffuse(light, L, N) * attenuation * intensity;
+    result.Specular = ComputeSpecular(light, L, N, V, mat.Specular.w) * attenuation * intensity;
 
-    [flatten]
-    if (diffuseFactor > 0.0f)
-    {
-        float3 v = reflect(-lightVec, surfNorm);
-        float specFactor = pow(max(dot(v, toEye), 0.0f), mat.Specular.w);
-
-        diffuse = diffuseFactor * mat.Diffuse * light.Diffuse;
-        specular = specFactor * mat.Specular * light.Specular;
-    }
-
-    // Scale by spotlight angle and attenuate
-    float spot = ComputeSpot(-lightVec, light.Direction, light.Spot);
-
-    ambient *= spot;
-    diffuse *= ComputeAttenuation(spot, light.Attenuation, dist);
-    specular *= ComputeAttenuation(spot, light.Attenuation, dist);
+    return result;
 }
+
+//LightingResult ComputeLighting(Light lights[], Material mat, float3 eyePos, float3 P, float3 N)
+//{
+//    float3 V = normalize(eyePos - P);
+
+//    LightingResult totalResult = (LightingResult) 0;
+
+//    [unroll]
+//    for (int i = 0; i < NUM_LIGHTS; ++i)
+//    {
+//        LightingResult result = (LightingResult) 0;
+
+//        // Forget lights that are not enabled
+//		//if (!lights[i].Enabled) ;
+
+//        switch (lights[i].Type)
+//        {
+//        case DIRECTIONAL_LIGHT:
+//        {
+//            result = ComputeDirectionalLight(lights[i], mat, V, N);
+//        }
+//        break;
+//        case POINT_LIGHT:
+//        {
+//            result = ComputePointLight(lights[i], mat, V, P, N);
+//        }
+//        break;
+//        case SPOT_LIGHT:
+//        {
+//            result = ComputeSpotLight(lights[i], mat, V, P, N);
+//        }
+//        break;
+//        }
+
+//        totalResult.Diffuse += result.Diffuse;
+//        totalResult.Specular += result.Specular;
+//    }
+
+//    return totalResult;
+//}

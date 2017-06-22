@@ -14,4 +14,6 @@ struct Vert
 	XMFLOAT3 position;
 	XMFLOAT3 normal;
 	XMFLOAT2 texcoord;
+	XMFLOAT3 tangent;
+	XMFLOAT3 bitangent;
 };

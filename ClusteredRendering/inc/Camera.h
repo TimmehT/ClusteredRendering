@@ -24,9 +24,10 @@ public:
 	void MoveDown(float dt);
 	void MoveLeft(float dt);
 	void MoveRight(float dt);
-
-	const CameraData& GetCamData();
 	
+	CameraData& GetCamData();
+	
+	XMFLOAT3 GetPosition();
 
 private:
 	XMFLOAT3 m_up;
