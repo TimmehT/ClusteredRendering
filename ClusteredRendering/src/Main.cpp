@@ -7,7 +7,6 @@
 #include "Model.h"
 #include "CTexture.h"
 #include "Shader.h"
-//#include "Light.h"
 #include "LightManager.h"
 
 // Define window & VSync Setting
@@ -37,70 +36,26 @@ ID3D11DepthStencilState* g_d3dDepthStencilState = nullptr;
 ID3D11RasterizerState* g_d3dRasterizerState = nullptr;
 D3D11_VIEWPORT g_viewport = { 0 };
 
-// Vertex buffer data
-ID3D11InputLayout* g_d3dInputLayout = nullptr;
-ID3D11Buffer* g_d3dVertexBuffer = nullptr;
-ID3D11Buffer* g_d3dIndexBuffer = nullptr;
-
-// Shader data
-ID3D11VertexShader* g_d3dVertexShader = nullptr;
-ID3D11PixelShader* g_d3dPixelShader = nullptr;
-
 ID3D11SamplerState* g_d3dSamplerState = nullptr;
 
-float lastValue = 0;
-float diff = 0;
-
-// Shader resources 
-enum ConstantBuffer
-{
-	CB_Application,
-	CB_Frame,
-	CB_Object,
-	NumConstantBuffers
-};
-
-ID3D11Buffer* g_d3dConstantBuffers[NumConstantBuffers];
+ID3D11Buffer* g_d3dObjectBuffer;
+ID3D11Buffer* g_d3dFrameBuffer;
 
 struct cbPerObject
 {
 	XMMATRIX g_worldMatrix;
 	XMMATRIX g_invWorld;
-	//XMMATRIX g_wvp;
+	XMMATRIX g_wvp;
+};
+
+struct cbPerFrame
+{
+	Light light;
 };
 // Demo parameteres
 
 cbPerObject perObject;
-
-// Vertex data for a colored cube
-struct VertexPosColor
-{
-	XMFLOAT3 position;
-	XMFLOAT2 tex;
-};
-
-VertexPosColor g_vertices[8] =
-{
-	{ XMFLOAT3(-1.0f,-1.0f,-1.0f), XMFLOAT2(0.0f, 1.0f) }, // 0
-	{ XMFLOAT3(-1.0f, 1.0f,-1.0f), XMFLOAT2(0.0f, 0.0f) }, // 1
-	{ XMFLOAT3(1.0f, 1.0f,-1.0f), XMFLOAT2(1.0f, 0.0f) }, // 2
-	{ XMFLOAT3(1.0f,-1.0f,-1.0f), XMFLOAT2(1.0f, 1.0f) }, // 3
-	{ XMFLOAT3(-1.0f,-1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) }, // 4
-	{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) }, // 5
-	{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) }, // 6
-	{ XMFLOAT3(1.0f,-1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) }, // 7
-};
-
-unsigned int g_indicies[36] =
-{
-	0, 1, 2, 0, 2, 3,
-	4, 6, 5, 4, 7, 6,
-	4, 5, 1, 4, 1, 0,
-	3, 2, 6, 3, 6, 7,
-	1, 5, 6, 1, 6, 2,
-	4, 0, 3, 4, 3, 7
-
-};
+cbPerFrame perFrame;
 
 GameTimer g_Timer;
 Camera g_cam;
@@ -117,16 +72,7 @@ float prevRenderTime;
 XMMATRIX proj;
 XMMATRIX view;
 
-
-ID3D11Buffer* cbLightBuffer;
-
-
-//DirectionalLight light;
 Light light;
-struct cbLight
-{
-	Light light;
-};
 
 
 // Forward declarations
@@ -437,35 +383,24 @@ bool LoadContent()
 {
 	assert(g_d3dDevice);
 
-	// Create the constant buffers for the variables defined in the vertex shader.
+	// Create constant buffer description
 	D3D11_BUFFER_DESC constantBufferDesc;
 	ZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc.ByteWidth = sizeof(XMMATRIX);
-	constantBufferDesc.CPUAccessFlags = 0;
-	constantBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	constantBufferDesc.ByteWidth = sizeof(cbPerObject);
+	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 
-	// Create the constant buffers for the variables defined in the vertex shader.
-	D3D11_BUFFER_DESC constantBufferDesc2;
-	ZeroMemory(&constantBufferDesc2, sizeof(D3D11_BUFFER_DESC));
-
-	constantBufferDesc2.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc2.ByteWidth = sizeof(cbPerObject);
-	constantBufferDesc2.CPUAccessFlags = 0;
-	constantBufferDesc2.Usage = D3D11_USAGE_DEFAULT;
-
-	HRESULT hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffers[CB_Application]);
+	HRESULT hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dObjectBuffer);
 	if (FAILED(hr))
 	{
 		return false;
 	}
-	hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dConstantBuffers[CB_Frame]);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-	hr = g_d3dDevice->CreateBuffer(&constantBufferDesc2, nullptr, &g_d3dConstantBuffers[CB_Object]);
+
+	constantBufferDesc.ByteWidth = sizeof(cbPerFrame);
+
+	hr = g_d3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &g_d3dFrameBuffer);
 	if (FAILED(hr))
 	{
 		return false;
@@ -488,8 +423,7 @@ bool LoadContent()
 
 	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
 
-	proj = XMMatrixTranspose(EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat));
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Application], 0, nullptr, &proj, 0, 0);
+	proj = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat);
 
 	// Create a sampler state for texture sampling in the pixel shader
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -521,42 +455,24 @@ bool LoadContent()
 		return false;
 	}
 
-	//light.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
-	//light.Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	//light.Diffuse = XMFLOAT4(2.0f, 1.0f, 1.0f, 1.0f);
-	//light.Specular = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	g_sponza.SetScale(0.01f, 0.01f, 0.01f);
+	g_sponza.SetRotation(0.0f, 90.0f, 0.0f);
+	g_sponza.SetTranslation(0.0f, -2.0f, 0.0f);
+	g_sponza.SetWorldMatrix(g_sponza.GetModelData().m_scaleMatrix, g_sponza.GetModelData().m_rotationMatrix, g_sponza.GetModelData().m_translationMatrix);
 
 	light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 0.0f, 1.0f);
-	light.m_color = XMFLOAT4(2, 1, 1, 1);
+	light.m_color = XMFLOAT4(1, 1, 1, 1);
 	light.m_specIntensity = 0.0f;
 	light.m_type = LightType::Directional;
-
-	
-	// Create the constant buffers for the variables defined in the vertex shader.
-	D3D11_BUFFER_DESC lightBufferDesc;
-	ZeroMemory(&lightBufferDesc, sizeof(D3D11_BUFFER_DESC));
-
-	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	lightBufferDesc.ByteWidth = sizeof(cbLight);
-	lightBufferDesc.CPUAccessFlags = 0;
-	lightBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-
-	hr = g_d3dDevice->CreateBuffer(&lightBufferDesc, nullptr, &cbLightBuffer);
 
 	return true;
 }
 
 void UnloadContent()
 {
-	SafeRelease(cbLightBuffer);
-	SafeRelease(g_d3dConstantBuffers[CB_Application]);
-	SafeRelease(g_d3dConstantBuffers[CB_Frame]);
-	SafeRelease(g_d3dConstantBuffers[CB_Object]);
-	SafeRelease(g_d3dIndexBuffer);
-	SafeRelease(g_d3dVertexBuffer);
-	SafeRelease(g_d3dInputLayout);
-	SafeRelease(g_d3dVertexShader);
-	SafeRelease(g_d3dPixelShader);
+	SafeRelease(g_d3dSamplerState);
+	SafeRelease(g_d3dFrameBuffer);
+	SafeRelease(g_d3dObjectBuffer);
 	SafeDelete(g_vs);
 	SafeDelete(g_ps);
 
@@ -765,9 +681,7 @@ void Update(float deltaTime)
 	}
 	g_cam.Update();
 
-	 view = XMMatrixTranspose(EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat));
-
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Frame], 0, nullptr, &view, 0, 0);
+	 view = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat);
 
 	g_input.Reset();
 }
@@ -798,37 +712,58 @@ void Render()
 	assert(g_d3dDevice);
 	assert(g_d3dDeviceContext);
 
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	D3D11_MAPPED_SUBRESOURCE mappedResource2;
+	ZeroMemory(&mappedResource2, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	cbPerFrame* dataPtr;
+	cbPerObject* objPtr;
+
 	Clear(Colors::CornflowerBlue, 1.0f, 0);
 
 	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	g_vs->Push();
-	g_d3dDeviceContext->VSSetConstantBuffers(0, 3, g_d3dConstantBuffers);
 
 	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
 	g_d3dDeviceContext->RSSetViewports(1, &g_viewport);
 
 	g_ps->Push();
-	cbLight l;
-	l.light = light;
-	g_d3dDeviceContext->UpdateSubresource(cbLightBuffer, 0, nullptr, &l, 0, 0);
-	g_d3dDeviceContext->PSSetConstantBuffers(0, 1, &cbLightBuffer);
+
+	perFrame.light = light;
+
+	g_d3dDeviceContext->Map(g_d3dFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	dataPtr = (cbPerFrame*)mappedResource.pData;
+
+	dataPtr->light = perFrame.light;
+
+	g_d3dDeviceContext->Unmap(g_d3dFrameBuffer, 0);
+
+	g_d3dDeviceContext->PSSetConstantBuffers(0, 1, &g_d3dFrameBuffer);
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
 
-	XMMATRIX translation = XMMatrixTranslation(0.0f, -2.0f, 0.0f);
-	XMMATRIX rot = XMMatrixRotationY(XMConvertToRadians(90.0f));
-	XMMATRIX scale = XMMatrixScaling(0.01f, 0.01f, 0.01f);
 	perObject.g_worldMatrix = XMMatrixIdentity();
-	perObject.g_worldMatrix = scale * rot * translation;
-	
-	//g_worldMatrix = scale * translation * rot;
+	perObject.g_worldMatrix = EngineMath::Float4X4ToMatrix( g_sponza.GetModelData().m_worldMatrix);
+	perObject.g_wvp = perObject.g_worldMatrix * view * proj;
+	perObject.g_wvp = XMMatrixTranspose(perObject.g_wvp);
 	perObject.g_worldMatrix = XMMatrixTranspose(perObject.g_worldMatrix);
-	perObject.g_invWorld = XMMatrixTranspose(XMMatrixInverse(nullptr, perObject.g_worldMatrix));
-	//perObject.g_wvp = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat)* EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat) * perObject.g_worldMatrix;
+	perObject.g_invWorld = EngineMath::Float4X4ToMatrix(g_sponza.GetModelData().m_inverseWorld);
+	
 
-	g_d3dDeviceContext->UpdateSubresource(g_d3dConstantBuffers[CB_Object], 0, nullptr, &perObject, 0, 0);
+	g_d3dDeviceContext->Map(g_d3dObjectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource2);
+
+	objPtr = (cbPerObject*)mappedResource2.pData;
+
+	objPtr->g_worldMatrix = perObject.g_worldMatrix;
+	objPtr->g_invWorld = perObject.g_invWorld;
+	objPtr->g_wvp = perObject.g_wvp;
+
+	g_d3dDeviceContext->Unmap(g_d3dObjectBuffer, 0);
+
+	g_d3dDeviceContext->VSSetConstantBuffers(0, 1, &g_d3dObjectBuffer);
 
 	g_sponza.Render(g_d3dDeviceContext);
 

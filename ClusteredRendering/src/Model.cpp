@@ -47,6 +47,42 @@ void Model::Render(ID3D11DeviceContext* context)
 	}
 }
 
+void Model::SetScale(float x, float y, float z)
+{
+	XMMATRIX scale = XMMatrixScaling(x, y, z);
+	XMStoreFloat4x4(&m_modelData.m_scaleMatrix, scale);
+}
+
+void Model::SetRotation(float x, float y, float z)
+{
+	XMMATRIX rot = XMMatrixRotationX(XMConvertToRadians(x));
+	rot *= XMMatrixRotationY(XMConvertToRadians(y));
+	rot *= XMMatrixRotationZ(XMConvertToRadians(z));
+	XMStoreFloat4x4(&m_modelData.m_rotationMatrix, rot);
+}
+
+void Model::SetTranslation(float x, float y, float z)
+{
+	XMMATRIX trans = XMMatrixTranslation(x, y, z);
+	XMStoreFloat4x4(&m_modelData.m_translationMatrix, trans);
+}
+
+void Model::SetWorldMatrix(XMFLOAT4X4 x, XMFLOAT4X4 y, XMFLOAT4X4 z)
+{
+	XMMATRIX xM = EngineMath::Float4X4ToMatrix(x);
+	XMMATRIX yM = EngineMath::Float4X4ToMatrix(y);
+	XMMATRIX zM = EngineMath::Float4X4ToMatrix(z);
+	XMMATRIX world = XMMatrixIdentity();
+	world = xM * yM * zM;
+	XMStoreFloat4x4(&m_modelData.m_worldMatrix, world);
+	XMStoreFloat4x4(&m_modelData.m_inverseWorld, XMMatrixInverse(nullptr,world));
+}
+
+ModelData & Model::GetModelData()
+{
+	return m_modelData;
+}
+
 void Model::ProecessNode(aiNode * node, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)

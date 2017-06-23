@@ -1,17 +1,8 @@
-cbuffer PerApplication : register(b0)
+cbuffer PerObject : register(b0)
 {
-    matrix projectionMatrix;
-}
-
-cbuffer PerFrame : register(b1)
-{
-    matrix viewMatrix;
-}
-
-cbuffer PerObject : register(b2)
-{
-    matrix worldMatrix;
-    matrix invWM;
+    float4x4 world;
+    float4x4 worldInvTranspose;
+    float4x4 worldViewProj;
 }
 
 struct AppData
@@ -37,12 +28,11 @@ VertexShaderOutput SimpleVertexShader(AppData IN)
 {
     VertexShaderOutput OUT;
 
-    matrix mvp = mul(mul(worldMatrix,viewMatrix), projectionMatrix);
-    OUT.position = mul( float4(IN.position, 1.f), mvp);
+    OUT.position = mul( float4(IN.position, 1.f),worldViewProj);
     OUT.tex = IN.tex;
-    OUT.normal = mul(IN.normal,(float3x3)invWM);
-    OUT.tangentW = IN.tangent;
-    OUT.binormalW = IN.binormal;
+    OUT.normal = mul(IN.normal,(float3x3)worldInvTranspose);
+    OUT.tangentW = mul(IN.tangent, (float3x3)world);
+    OUT.binormalW = mul(IN.binormal, (float3x3)world);
 
     return OUT;
 
