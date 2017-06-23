@@ -1,6 +1,7 @@
 #pragma once
 #include "Vert.h"
 #include "CTexture.h"
+#include "CMaterial.h"
 
 class CMesh
 {

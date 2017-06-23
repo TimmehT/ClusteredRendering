@@ -103,6 +103,7 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 	std::vector<unsigned int> indices;
 	std::vector<CTexture*> textures;
 	
+	
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -198,4 +199,31 @@ std::vector<CTexture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureTy
 
 	}
 	return textures;
+}
+
+void Model::LoadMaterialProperties(aiMaterial * mat)
+{
+	aiColor4D ambientColor;
+	aiColor4D diffuseColor;
+	aiColor4D specular;
+	aiColor4D emissiveColor;
+
+	CMaterial* material = new CMaterial();
+
+	if (mat->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor) == aiReturn_SUCCESS)
+	{
+		material->SetColor(ColorType::Ambient, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+	if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == aiReturn_SUCCESS)
+	{
+		material->SetColor(ColorType::Diffuse, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+	if (mat->Get(AI_MATKEY_COLOR_SPECULAR, specular) == aiReturn_SUCCESS)
+	{
+		material->SetColor(ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+	if (mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == aiReturn_SUCCESS)
+	{
+		material->SetColor(ColorType::Emissive, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
 }

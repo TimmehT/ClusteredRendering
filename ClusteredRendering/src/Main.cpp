@@ -460,7 +460,7 @@ bool LoadContent()
 	g_sponza.SetTranslation(0.0f, -2.0f, 0.0f);
 	g_sponza.SetWorldMatrix(g_sponza.GetModelData().m_scaleMatrix, g_sponza.GetModelData().m_rotationMatrix, g_sponza.GetModelData().m_translationMatrix);
 
-	light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 0.0f, 1.0f);
+	light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);
 	light.m_color = XMFLOAT4(1, 1, 1, 1);
 	light.m_specIntensity = 0.0f;
 	light.m_type = LightType::Directional;
