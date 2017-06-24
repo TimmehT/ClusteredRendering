@@ -44,7 +44,7 @@ ID3D11Buffer* g_d3dFrameBuffer;
 ID3D11Buffer* g_lightBuffer;
 ID3D11ShaderResourceView* g_lightSRV;
 
-const unsigned numLights = 3;
+const unsigned numLights = 50;
 
 Light lights[numLights];
 
@@ -486,10 +486,25 @@ bool LoadContent()
 
 	for (int i = 0; i < numLights; i++)
 	{
-		lights[i].m_directionWS = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);
-		lights[i].m_color = XMFLOAT4(1, 1, 1, 1);
-		lights[i].m_specIntensity = 0.0f;
-		lights[i].m_type = LightType::Directional;
+		 ;
+
+		 float x = (-7.82f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (7.82f - (-7.82f)))));
+		float y = (static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 14.0f)));
+		float z = (-14.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (14.0f - (-14.0f)))));
+
+		float r = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX));
+		float g = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX));
+		float b = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX));
+
+		lights[i].m_positionWS = XMFLOAT4(x, y, z, 1);
+		lights[i].m_directionWS = XMFLOAT4(0, 0, -1, 0);
+		lights[i].m_color = XMFLOAT4(r, g, b, 1);
+		lights[i].m_attenuation = XMFLOAT3(1, 0.7f, 1.8f);
+		lights[i].m_specIntensity = 1.0f;
+		lights[i].m_range = 7.0f;
+		lights[i].m_spotAngle = 45.0f;
+		lights[i].m_enabled = true;
+		lights[i].m_type = LightType::Point;
 	}
 
 	D3D11_SUBRESOURCE_DATA lightInitData;

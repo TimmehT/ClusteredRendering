@@ -1,5 +1,5 @@
 
-#define NUM_LIGHTS 1
+#define NUM_LIGHTS 50
 
 #define POINT_LIGHT 0
 #define SPOT_LIGHT 1

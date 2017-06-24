@@ -230,7 +230,7 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 		material->SetColor(CMaterial::ColorType::Emissive, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
 	}
 
-	if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+	/*if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 	{
 		material->SetTexture(CMaterial::TextureType::Diffuse, LoadMaterialTexture(mat, aiTextureType_DIFFUSE, device, context));
 	}
@@ -253,7 +253,7 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 	if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)
 	{
 		material->SetTexture(CMaterial::TextureType::Opacity, LoadMaterialTexture(mat, aiTextureType_OPACITY, device, context));
-	}
+	}*/
 
 	return material;
 }
