@@ -30,8 +30,9 @@ private:
 
 	void ProecessNode(aiNode* node, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context);
 	CMesh* ProcessMesh(aiMesh* mesh, const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context);
-	std::vector<CTexture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context);
-	void LoadMaterialProperties(aiMaterial* mat);
+	//std::vector<CTexture*> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context);
+	CMaterial* LoadMaterialProperties(aiMaterial* mat, ID3D11Device* device, ID3D11DeviceContext* context);
+	CTexture* LoadMaterialTexture(aiMaterial* mat, aiTextureType type, ID3D11Device* device, ID3D11DeviceContext* context );
 
 	std::vector<CMesh*> m_meshList;
 	std::vector<CTexture*> m_loadedTextures;

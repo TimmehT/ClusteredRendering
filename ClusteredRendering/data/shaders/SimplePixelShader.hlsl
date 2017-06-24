@@ -11,6 +11,7 @@ cbuffer cbLights : register(b0)
 struct PixelShaderInput
 {
     float4 position : SV_Position;
+    float3 pos : POSITION;
     float3 normal : NORMAL;
     float2 tex : TEXCOORD0;
     float3 tangentW : TANGENT;
@@ -20,6 +21,8 @@ struct PixelShaderInput
 float4 SimplePixelShader(PixelShaderInput IN) : SV_Target
 {
     IN.normal = normalize(IN.normal);
+    IN.tangentW = normalize(IN.tangentW);
+    IN.binormalW = normalize(IN.tangentW);
     float4 textureColor;
 
     textureColor = shaderTexture.Sample(SampleType, IN.tex);
@@ -54,6 +57,7 @@ float4 SimplePixelShader(PixelShaderInput IN) : SV_Target
     float4 final = (ambient + diffuse) + spec;
 
     //textureColor = float4(IN.normal, 1);
+
 
     return final;
 }

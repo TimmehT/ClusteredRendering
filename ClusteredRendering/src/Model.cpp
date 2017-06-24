@@ -101,7 +101,8 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 {
 	std::vector<Vert> vertices;
 	std::vector<unsigned int> indices;
-	std::vector<CTexture*> textures;
+	//std::vector<CTexture*> textures;
+	CMaterial* mat = new CMaterial(device);
 	
 	
 
@@ -136,39 +137,143 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 	{
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-		std::vector<CTexture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", device, context);
+		/*std::vector<CTexture*> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", device, context);
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
 		std::vector<CTexture*> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", device, context);
 		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
 		std::vector<CTexture*> normalMaps = LoadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", device, context);
-		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());*/
+
+		mat = LoadMaterialProperties(material,device, context);
 
 	}
-	return new CMesh(&vertices,&indices,textures, device);
+	return new CMesh(&vertices,&indices, mat, device);
 }
 
-std::vector<CTexture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
+//std::vector<CTexture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureType type, std::string typeName, ID3D11Device* device, ID3D11DeviceContext* context)
+//{
+//
+//	std::vector<CTexture*> textures;
+//
+//	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+//	{
+//		aiString str;
+//		mat->GetTexture(type, i, &str);
+//
+//		bool skip = false;
+//		for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
+//		{
+//			if (std::strcmp(m_loadedTextures[j]->GetTexData().path.C_Str(), str.C_Str()) == 0)
+//			{
+//				textures.push_back(m_loadedTextures[j]);
+//				skip = true;
+//				break;
+//			}
+//			
+//		}
+//
+//		if (!skip)
+//		{
+//			CTexture* texture = new CTexture();
+//
+//			std::string filepath = std::string(str.data);
+//
+//			if (filepath.rfind('\\') != 0)
+//			{
+//				std::replace(filepath.begin(), filepath.end(), '\\', '/');
+//			}
+//			
+//			filepath = std::string(directory.c_str()) + '/' + std::string(filepath.c_str());
+//			wchar_t wc_path[MAX_PATH];
+//			wchar_t wc_p;
+//
+//
+//			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);
+//
+//			texture->LoadTextureFromFile(device, context, wc_path);
+//			
+//			//texture.SetFinalPath(wc_path);
+//			texture->SetPath(str);
+//			textures.push_back(texture);
+//			m_loadedTextures.push_back(texture);
+//		}
+//
+//	}
+//	return textures;
+//}
+
+CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device, ID3D11DeviceContext* context)
+{
+	aiColor4D ambientColor;
+	aiColor4D diffuseColor;
+	aiColor4D specular;
+	aiColor4D emissiveColor;
+
+	CMaterial* material = new CMaterial(device);
+
+	if (mat->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor) == aiReturn_SUCCESS)
+	{
+		material->SetColor(CMaterial::ColorType::Ambient, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+	if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == aiReturn_SUCCESS)
+	{
+		material->SetColor(CMaterial::ColorType::Diffuse, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+	if (mat->Get(AI_MATKEY_COLOR_SPECULAR, specular) == aiReturn_SUCCESS)
+	{
+		material->SetColor(CMaterial::ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+	if (mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == aiReturn_SUCCESS)
+	{
+		material->SetColor(CMaterial::ColorType::Emissive, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+	}
+
+	if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+	{
+		material->SetTexture(CMaterial::TextureType::Diffuse, LoadMaterialTexture(mat, aiTextureType_DIFFUSE, device, context));
+	}
+
+	if (mat->GetTextureCount(aiTextureType_SPECULAR) > 0)
+	{
+		material->SetTexture(CMaterial::TextureType::Specular, LoadMaterialTexture(mat, aiTextureType_SPECULAR, device, context));
+	}
+
+	if (mat->GetTextureCount(aiTextureType_EMISSIVE) > 0)
+	{
+		material->SetTexture(CMaterial::TextureType::Emissive, LoadMaterialTexture(mat, aiTextureType_EMISSIVE, device, context));
+	}
+
+	if (mat->GetTextureCount(aiTextureType_NORMALS) > 0)
+	{
+		material->SetTexture(CMaterial::TextureType::Normal, LoadMaterialTexture(mat, aiTextureType_NORMALS, device, context));
+	}
+
+	if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)
+	{
+		material->SetTexture(CMaterial::TextureType::Opacity, LoadMaterialTexture(mat, aiTextureType_OPACITY, device, context));
+	}
+
+	return material;
+}
+
+CTexture * Model::LoadMaterialTexture(aiMaterial * mat, aiTextureType type, ID3D11Device * device, ID3D11DeviceContext * context)
 {
 
-	std::vector<CTexture*> textures;
-
-	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-	{
 		aiString str;
-		mat->GetTexture(type, i, &str);
+		mat->GetTexture(type, 0, &str);
 
 		bool skip = false;
-		for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
+		for (unsigned int i = 0; i < m_loadedTextures.size(); i++)
 		{
-			if (std::strcmp(m_loadedTextures[j]->GetTexData().path.C_Str(), str.C_Str()) == 0)
+			if (std::strcmp(m_loadedTextures[i]->GetTexData().path.C_Str(), str.C_Str()) == 0)
 			{
-				textures.push_back(m_loadedTextures[j]);
+				return m_loadedTextures[i];
 				skip = true;
 				break;
 			}
-			
+
 		}
 
 		if (!skip)
@@ -181,7 +286,7 @@ std::vector<CTexture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureTy
 			{
 				std::replace(filepath.begin(), filepath.end(), '\\', '/');
 			}
-			
+
 			filepath = std::string(directory.c_str()) + '/' + std::string(filepath.c_str());
 			wchar_t wc_path[MAX_PATH];
 			wchar_t wc_p;
@@ -190,40 +295,13 @@ std::vector<CTexture*> Model::LoadMaterialTextures(aiMaterial * mat, aiTextureTy
 			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);
 
 			texture->LoadTextureFromFile(device, context, wc_path);
-			
+
 			//texture.SetFinalPath(wc_path);
 			texture->SetPath(str);
-			textures.push_back(texture);
 			m_loadedTextures.push_back(texture);
+			return texture;
 		}
+		
+			return nullptr;
 
-	}
-	return textures;
-}
-
-void Model::LoadMaterialProperties(aiMaterial * mat)
-{
-	aiColor4D ambientColor;
-	aiColor4D diffuseColor;
-	aiColor4D specular;
-	aiColor4D emissiveColor;
-
-	CMaterial* material = new CMaterial();
-
-	if (mat->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor) == aiReturn_SUCCESS)
-	{
-		material->SetColor(ColorType::Ambient, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
-	if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == aiReturn_SUCCESS)
-	{
-		material->SetColor(ColorType::Diffuse, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
-	if (mat->Get(AI_MATKEY_COLOR_SPECULAR, specular) == aiReturn_SUCCESS)
-	{
-		material->SetColor(ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
-	if (mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == aiReturn_SUCCESS)
-	{
-		material->SetColor(ColorType::Emissive, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
 }

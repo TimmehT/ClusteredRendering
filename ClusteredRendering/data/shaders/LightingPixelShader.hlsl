@@ -2,16 +2,21 @@
 
 cbuffer cbPerFrame : register(b0)
 {
-    Light light;
     float3 eyePosW;
+    float pad;
 };
 
-cbuffer MaterialProperties : register(b0)
+cbuffer MaterialProperties : register(b1)
 {
     Material mat;
 };
 
 Texture2D diffuseTexture : register(t0);
+Texture2D specularTexture : register(t1);
+Texture2D emissiveTexture : register(t2);
+Texture2D normalTexture : register(t3);
+Texture2D opacityTexture : register(t4);
+StructuredBuffer<Light> lights : register(t5);
 SamplerState SampleType : register(s0);
 
 struct PixelShaderInput
@@ -32,29 +37,83 @@ float4 main(PixelShaderInput IN) : SV_TARGET
 
     float distToEye = length(toEye);
 
-    float4 texColor = diffuseTexture.Sample(SampleType, IN.texc);
-    clip(texColor.a - 0.1f);
-
-    float4 litColor = texColor;
-    if (8 > 0)
+    float4 diffuse = mat.DiffuseColor;
+    if(mat.UseDiffuseTexture)
     {
-        float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        float4 specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-        //[unroll]
-        //for (int i = 0; i < 8; i++)
-        //{
-        //    float4 A, D, S;
-        //    //ComputePointLight(mat, lights[i],IN.posW, IN.normalW, toEye, A, D, S);
-
-        //    ambient += A;
-        //    diffuse += D;
-        //    specular += S;
-        //}
-
-        litColor = texColor * (ambient + diffuse) + specular;
+        float4 diffTex = diffuseTexture.Sample(SampleType, IN.texc);
+        if(any(diffuse.rgb))
+        {
+            diffuse = diffTex;
+        }
+        else
+        {
+            diffuse = diffTex;
+        }
     }
 
-    return litColor;
+    float alpha = diffuse.a;
+    if(mat.UseOpacityTexture)
+    {
+        alpha = opacityTexture.Sample(SampleType, IN.texc).r;
+    }
+
+    float4 ambient = mat.AmbientColor;
+    
+    ambient *= mat.GlobalAmbient;
+
+    float4 emissive = mat.EmissiveColor;
+    if(mat.UseEmmisiveTexture)
+    {
+        float4 emissiveTex = emissiveTexture.Sample(SampleType, IN.texc);
+        if(any(emissive.rgb))
+        {
+            emissive *= emissiveTex;
+        }
+        else
+        {
+            emissive = emissiveTex;
+        }
+    }
+
+    float3 N;
+
+    if(mat.UseNormalTexture)
+    {
+        float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), (IN.normalW));
+
+        N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
+    }
+    else
+    {
+        N = IN.normalW;
+    }
+
+    float3 P = IN.posW;
+
+    LightingResult lighting = ComputeLighting(lights, mat, eyePosW, P, N);
+
+    diffuse *= float4(lighting.Diffuse.rgb, 1.0f);
+
+    float4 specular = 0;
+    if(mat.SpecularColor.w > 1.0f)
+    {
+        specular = mat.SpecularColor;
+        if(mat.UseSpecularTexture)
+        {
+            float4 specularTex = specularTexture.Sample(SampleType, IN.texc);
+            if(any(specular.rgb))
+            {
+                specular *= specularTex;
+            }
+            else
+            {
+                specular = specularTex;
+            }
+        }
+
+        specular *= lighting.Specular;
+    }
+   // return float4(IN.normalW, 1);
+    //return diffuse;
+    return float4((ambient + emissive + diffuse + specular).rgb, alpha * 1);
 }

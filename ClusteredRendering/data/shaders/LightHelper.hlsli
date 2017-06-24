@@ -1,5 +1,5 @@
 
-#define NUM_LIGHTS 8
+#define NUM_LIGHTS 1
 
 #define POINT_LIGHT 0
 #define SPOT_LIGHT 1
@@ -26,10 +26,26 @@ struct Light
 
 struct Material
 {
-    float4 Ambient;
-    float4 Diffuse;
-    float4 Specular;
-    float4 Emmisive;
+    float4 GlobalAmbient;
+		//-------------------------(16b)
+    float4 AmbientColor;
+		//-------------------------(16b)
+    float4 DiffuseColor;
+		//-------------------------(16b)
+    float4 SpecularColor;
+		//-------------------------(16b)
+    float4 EmissiveColor;
+		//-------------------------(16b)
+    bool UseDiffuseTexture;
+    bool UseSpecularTexture;
+    bool UseEmmisiveTexture;
+    bool UseNormalTexture;
+		//-------------------------(16b)
+    bool UseOpacityTexture;
+    float AlphaThreshold;
+    float2 Pad;
+		//-------------------------(16b)
+		// 7 * 16 = 112 bytes
 };
 
 struct LightingResult
@@ -38,7 +54,7 @@ struct LightingResult
     float4 Specular;
 };
 
-float3 ComputeNormalMapping(float3x3 TBN, Texture2D tex, sampler s, float2 texc)
+float3 ComputeNormalMapping(float3x3 TBN, Texture2D tex, SamplerState s, float2 texc)
 {
     float3 normalMap = tex.Sample(s, texc).xyz;
     normalMap = (2.0f * normalMap) - 1.0f;
@@ -89,7 +105,7 @@ LightingResult ComputeDirectionalLight(Light light, Material mat, float3 V, floa
     float3 L = -light.DirectionWS.xyz;
 
     result.Diffuse = ComputeDiffuse(light, L, N);
-    result.Specular = ComputeSpecular(light, L, N, V, mat.Specular.w);
+    result.Specular = ComputeSpecular(light, L, N, V, mat.SpecularColor.w);
 
     return result;
 }
@@ -115,7 +131,7 @@ LightingResult ComputePointLight(Light light, Material mat, float3 V, float3 P, 
     float attenuation = ComputeAttenuation(1.0f, light.Attenuation, distance);
 
     result.Diffuse = ComputeDiffuse(light, L, N) * attenuation;
-    result.Specular = ComputeSpecular(light, L, N, V, mat.Specular.w) * attenuation;
+    result.Specular = ComputeSpecular(light, L, N, V, mat.SpecularColor.w) * attenuation;
 
     return result;
 }
@@ -141,47 +157,53 @@ LightingResult ComputeSpotLight(Light light, Material mat, float3 V, float3 P, f
     float intensity = ComputeSpotCone(light, L);
 
     result.Diffuse = ComputeDiffuse(light, L, N) * attenuation * intensity;
-    result.Specular = ComputeSpecular(light, L, N, V, mat.Specular.w) * attenuation * intensity;
+    result.Specular = ComputeSpecular(light, L, N, V, mat.SpecularColor.w) * attenuation * intensity;
 
     return result;
 }
 
-//LightingResult ComputeLighting(Light lights[], Material mat, float3 eyePos, float3 P, float3 N)
-//{
-//    float3 V = normalize(eyePos - P);
+LightingResult ComputeLighting(StructuredBuffer<Light> lights, Material mat, float3 eyePos, float3 P, float3 N)
+{
+    float3 V = normalize(eyePos - P);
 
-//    LightingResult totalResult = (LightingResult) 0;
+    LightingResult totalResult = (LightingResult) 0;
+    for (int i = 0; i < NUM_LIGHTS; ++i)
+    {
+        LightingResult result = (LightingResult) 0;
 
-//    [unroll]
-//    for (int i = 0; i < NUM_LIGHTS; ++i)
-//    {
-//        LightingResult result = (LightingResult) 0;
+        // Forget lights that are not enabled
+		if (!lights[i].Enabled) /*continue*/;
+        {
+            
+        }
 
-//        // Forget lights that are not enabled
-//		//if (!lights[i].Enabled) ;
+        if (lights[i].Type != DIRECTIONAL_LIGHT && length(lights[i].PositionWS.xyz - P) > lights[i].Range);
+        {
+            
+        }
 
-//        switch (lights[i].Type)
-//        {
-//        case DIRECTIONAL_LIGHT:
-//        {
-//            result = ComputeDirectionalLight(lights[i], mat, V, N);
-//        }
-//        break;
-//        case POINT_LIGHT:
-//        {
-//            result = ComputePointLight(lights[i], mat, V, P, N);
-//        }
-//        break;
-//        case SPOT_LIGHT:
-//        {
-//            result = ComputeSpotLight(lights[i], mat, V, P, N);
-//        }
-//        break;
-//        }
+        switch (lights[i].Type)
+        {
+        case DIRECTIONAL_LIGHT:
+        {
+            result = ComputeDirectionalLight(lights[i], mat, V, N);
+        }
+        break;
+        case POINT_LIGHT:
+        {
+            result = ComputePointLight(lights[i], mat, V, P, N);
+        }
+        break;
+        case SPOT_LIGHT:
+        {
+            result = ComputeSpotLight(lights[i], mat, V, P, N);
+        }
+        break;
+        }
 
-//        totalResult.Diffuse += result.Diffuse;
-//        totalResult.Specular += result.Specular;
-//    }
+        totalResult.Diffuse += result.Diffuse;
+        totalResult.Specular += result.Specular;
+    }
 
-//    return totalResult;
-//}
+    return totalResult;
+}

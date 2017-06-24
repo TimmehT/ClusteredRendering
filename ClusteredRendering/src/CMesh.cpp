@@ -2,15 +2,16 @@
 #include "CMesh.h"
 
 
-CMesh::CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, std::vector<CTexture*> textureList, ID3D11Device* device)
+CMesh::CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, CMaterial* mat, ID3D11Device* device)
 {
 	m_indexBuffer = nullptr;
 	m_vertexBuffer = nullptr;
+	material = mat;
 	m_numVerts = vertexList->size();
 	m_numIndices = indexList->size();
 	m_vertexStride = sizeof(Vert);
 	m_vertexOffset = 0;
-	textures = textureList;
+	//textures = textureList;
 
 	InitBuffers(vertexList, indexList, device);
 }
@@ -27,7 +28,7 @@ CMesh::~CMesh()
 		SafeRelease(m_vertexBuffer);
 	}
 
-
+	SafeDelete(material);
 
 }
 
@@ -36,11 +37,16 @@ void CMesh::Render(ID3D11DeviceContext* context)
 	context->IASetVertexBuffers(0, 1, &m_vertexBuffer, &m_vertexStride, &m_vertexOffset);
 	context->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	if (textures.size() != 0)
-	{
-		textures[0]->PSSetSRV(context, 0);
-	}
+	//if (textures.size() != 0)
+	//{
+		//textures[0]->PSSetSRV(context, 0);
+	//}
 
+	if (material != nullptr)
+	{
+		material->Bind(context);
+	}
+	
 
 	context->DrawIndexed(m_numIndices, 0, 0);
 

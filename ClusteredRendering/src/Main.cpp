@@ -41,6 +41,16 @@ ID3D11SamplerState* g_d3dSamplerState = nullptr;
 ID3D11Buffer* g_d3dObjectBuffer;
 ID3D11Buffer* g_d3dFrameBuffer;
 
+ID3D11Buffer* g_lightBuffer;
+ID3D11ShaderResourceView* g_lightSRV;
+
+const unsigned numLights = 3;
+
+Light lights[numLights];
+
+
+
+
 struct cbPerObject
 {
 	XMMATRIX g_worldMatrix;
@@ -50,7 +60,8 @@ struct cbPerObject
 
 struct cbPerFrame
 {
-	Light light;
+	XMFLOAT3 eyePos;
+	float pad;
 };
 // Demo parameteres
 
@@ -72,7 +83,6 @@ float prevRenderTime;
 XMMATRIX proj;
 XMMATRIX view;
 
-Light light;
 
 
 // Forward declarations
@@ -407,10 +417,10 @@ bool LoadContent()
 	}
 
 	g_vs = new Shader(g_d3dDevice, g_d3dDeviceContext);
-	g_vs->LoadShaderFromFile(VertexShader, L"../data/shaders/SimpleVertexShader.hlsl", "SimpleVertexShader", "latest");
+	g_vs->LoadShaderFromFile(VertexShader, L"../data/shaders/LightingVertexShader.hlsl", "main", "latest");
 
 	g_ps = new Shader(g_d3dDevice, g_d3dDeviceContext);
-	g_ps->LoadShaderFromFile(PixelShader, L"../data/shaders/SimplePixelShader.hlsl", "SimplePixelShader", "latest");
+	g_ps->LoadShaderFromFile(PixelShader, L"../data/shaders/LightingPixelShader.hlsl", "main", "latest");
 
 	// Setup the projection matrix.
 	RECT clientRect;
@@ -460,16 +470,62 @@ bool LoadContent()
 	g_sponza.SetTranslation(0.0f, -2.0f, 0.0f);
 	g_sponza.SetWorldMatrix(g_sponza.GetModelData().m_scaleMatrix, g_sponza.GetModelData().m_rotationMatrix, g_sponza.GetModelData().m_translationMatrix);
 
-	light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);
-	light.m_color = XMFLOAT4(1, 1, 1, 1);
-	light.m_specIntensity = 0.0f;
-	light.m_type = LightType::Directional;
+	//light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);
+	//light.m_color = XMFLOAT4(1, 1, 1, 1);
+	//light.m_specIntensity = 0.0f;
+	//light.m_type = LightType::Directional;
+
+	D3D11_BUFFER_DESC lightBufferDesc;
+	ZeroMemory(&lightBufferDesc, sizeof(D3D11_BUFFER_DESC));
+	lightBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	lightBufferDesc.ByteWidth = sizeof(Light) * numLights;
+	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	lightBufferDesc.StructureByteStride = sizeof(Light);
+
+	for (int i = 0; i < numLights; i++)
+	{
+		lights[i].m_directionWS = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);
+		lights[i].m_color = XMFLOAT4(1, 1, 1, 1);
+		lights[i].m_specIntensity = 0.0f;
+		lights[i].m_type = LightType::Directional;
+	}
+
+	D3D11_SUBRESOURCE_DATA lightInitData;
+	lightInitData.pSysMem = &lights[0];
+	lightInitData.SysMemPitch = 0;
+	lightInitData.SysMemSlicePitch = 0;
+
+	hr = g_d3dDevice->CreateBuffer(&lightBufferDesc, &lightInitData, &g_lightBuffer);
+	if (FAILED(hr))
+	{
+		//MessageBoxA(m_Window.get_WindowHandle(), "Failed to create texture sampler.", "Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC lightSRVDesc;
+	ZeroMemory(&lightSRVDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+	lightSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+	lightSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	lightSRVDesc.BufferEx.FirstElement = 0;
+	lightSRVDesc.BufferEx.NumElements = numLights;
+
+	hr = g_d3dDevice->CreateShaderResourceView(g_lightBuffer, &lightSRVDesc, &g_lightSRV);
+	if (FAILED(hr))
+	{
+		//MessageBoxA(m_Window.get_WindowHandle(), "Failed to create texture sampler.", "Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
 
 	return true;
 }
 
 void UnloadContent()
 {
+	SafeRelease(g_lightBuffer);
+	SafeRelease(g_lightSRV);
 	SafeRelease(g_d3dSamplerState);
 	SafeRelease(g_d3dFrameBuffer);
 	SafeRelease(g_d3dObjectBuffer);
@@ -716,8 +772,12 @@ void Render()
 	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	D3D11_MAPPED_SUBRESOURCE mappedResource2;
 	ZeroMemory(&mappedResource2, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	cbPerFrame* dataPtr;
-	cbPerObject* objPtr;
+
+	D3D11_MAPPED_SUBRESOURCE lightResource;
+
+	g_d3dDeviceContext->Map(g_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightResource);
+	memcpy(lightResource.pData, &lights[0], numLights * sizeof(Light));
+	g_d3dDeviceContext->Unmap(g_lightBuffer, 0);
 
 	Clear(Colors::CornflowerBlue, 1.0f, 0);
 
@@ -729,18 +789,18 @@ void Render()
 
 	g_ps->Push();
 
-	perFrame.light = light;
+	//perFrame.light = light;
+	perFrame.eyePos = g_cam.GetPosition();
 
 	g_d3dDeviceContext->Map(g_d3dFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
-	dataPtr = (cbPerFrame*)mappedResource.pData;
-
-	dataPtr->light = perFrame.light;
+	memcpy(mappedResource.pData, &perFrame, sizeof(perFrame));
 
 	g_d3dDeviceContext->Unmap(g_d3dFrameBuffer, 0);
 
 	g_d3dDeviceContext->PSSetConstantBuffers(0, 1, &g_d3dFrameBuffer);
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
+	g_d3dDeviceContext->PSSetShaderResources(5, 1, &g_lightSRV);
 
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
@@ -755,11 +815,7 @@ void Render()
 
 	g_d3dDeviceContext->Map(g_d3dObjectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource2);
 
-	objPtr = (cbPerObject*)mappedResource2.pData;
-
-	objPtr->g_worldMatrix = perObject.g_worldMatrix;
-	objPtr->g_invWorld = perObject.g_invWorld;
-	objPtr->g_wvp = perObject.g_wvp;
+	memcpy(mappedResource2.pData, &perObject, sizeof(perObject));
 
 	g_d3dDeviceContext->Unmap(g_d3dObjectBuffer, 0);
 

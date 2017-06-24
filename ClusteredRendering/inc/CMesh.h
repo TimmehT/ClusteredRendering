@@ -1,12 +1,11 @@
 #pragma once
 #include "Vert.h"
-#include "CTexture.h"
 #include "CMaterial.h"
 
 class CMesh
 {
 public:
-	CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, std::vector<CTexture*> textureList, ID3D11Device* device);
+	CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, CMaterial* mat, ID3D11Device* device);
 	~CMesh();
 
 	void Render(ID3D11DeviceContext* context);
@@ -24,5 +23,5 @@ private:
 	unsigned int m_vertexOffset;
 	unsigned int m_vertexStride;
 
-	std::vector<CTexture*> textures;
+	CMaterial* material;
 };
