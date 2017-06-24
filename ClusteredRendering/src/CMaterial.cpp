@@ -133,8 +133,12 @@ void CMaterial::Bind(ID3D11DeviceContext* context)
 
 	for (auto texture : m_textures)
 	{
-		CTexture* tex = texture.second;
-		tex->PSSetSRV(context, (uint32_t)texture.first);
+		if (texture.second != nullptr)
+		{
+			CTexture* tex = texture.second;
+			tex->PSSetSRV(context, (uint32_t)texture.first);
+		}
+		
 	}
 
 	context->PSSetConstantBuffers(1, 1, &m_matConstantBuffer);

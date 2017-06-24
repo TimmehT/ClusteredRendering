@@ -11,11 +11,11 @@ cbuffer MaterialProperties : register(b1)
     Material mat;
 };
 
-//Texture2D diffuseTexture : register(t0);
-//Texture2D specularTexture : register(t1);
-//Texture2D emissiveTexture : register(t2);
-//Texture2D normalTexture : register(t3);
-//Texture2D opacityTexture : register(t4);
+Texture2D diffuseTexture : register(t0);
+Texture2D specularTexture : register(t1);
+Texture2D emissiveTexture : register(t2);
+Texture2D normalTexture : register(t3);
+Texture2D opacityTexture : register(t4);
 StructuredBuffer<Light> lights : register(t5);
 SamplerState SampleType : register(s0);
 
@@ -32,88 +32,51 @@ struct PixelShaderInput
 float4 main(PixelShaderInput IN) : SV_TARGET
 {
     IN.normalW = normalize(IN.normalW);
+    float3 P = IN.posW;
 
     float3 toEye = eyePosW.xyz - IN.posW;
 
     float distToEye = length(toEye);
 
-    float4 diffuse = mat.DiffuseColor;
-    //if(mat.UseDiffuseTexture)
-    //{
-    //    float4 diffTex = diffuseTexture.Sample(SampleType, IN.texc);
-    //    if(any(diffuse.rgb))
-    //    {
-    //        diffuse = diffTex;
-    //    }
-    //    else
-    //    {
-    //        diffuse = diffTex;
-    //    }
-    //}
+    float4 Ka = mat.AmbientColor;
+    Ka *= mat.GlobalAmbient;
+    float4 Kd = mat.DiffuseColor;
+    float4 Ks = mat.SpecularColor;
+    float4 Ke = mat.EmissiveColor;
+    float3 N = IN.normalW;
+    float opacity = Kd.a;
 
-    float alpha = diffuse.a;
-    //if(mat.UseOpacityTexture)
-    //{
-    //    alpha = opacityTexture.Sample(SampleType, IN.texc).r;
-    //}
+    if(mat.UseDiffuseTexture)
+    {
+        Kd = diffuseTexture.Sample(SampleType, IN.texc);
+    }
 
-    float4 ambient = mat.AmbientColor;
-    
-    ambient *= mat.GlobalAmbient;
+    if(mat.UseSpecularTexture)
+    {
+        Ks = specularTexture.Sample(SampleType, IN.texc);
+    }
 
-    float4 emissive = mat.EmissiveColor;
-    //if(mat.UseEmmisiveTexture)
-    //{
-    //    float4 emissiveTex = emissiveTexture.Sample(SampleType, IN.texc);
-    //    if(any(emissive.rgb))
-    //    {
-    //        emissive *= emissiveTex;
-    //    }
-    //    else
-    //    {
-    //        emissive = emissiveTex;
-    //    }
-    //}
+    if(mat.UseOpacityTexture)
+    {
+        opacity = opacityTexture.Sample(SampleType, IN.texc).r;
+    }
 
-    float3 N;
+    if(opacity < mat.AlphaThreshold)
+    {
+        discard;
+    }
 
     if(mat.UseNormalTexture)
     {
         float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), (IN.normalW));
 
-       // N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
+       //N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
     }
-    else
-    {
-        N = IN.normalW;
-    }
-
-    float3 P = IN.posW;
 
     LightingResult lighting = ComputeLighting(lights, mat, eyePosW, P, N);
 
-    diffuse *= float4(lighting.Diffuse.rgb, 1.0f);
-
-    float4 specular = 0;
-    //if(mat.SpecularColor.w > 1.0f)
-    //{
-        specular = mat.SpecularColor;
-        //if(mat.UseSpecularTexture)
-        //{
-        //    float4 specularTex = specularTexture.Sample(SampleType, IN.texc);
-        //    if(any(specular.rgb))
-        //    {
-        //        specular *= specularTex;
-        //    }
-        //    else
-        //    {
-        //        specular = specularTex;
-        //    }
-        //}
-
-        specular *= lighting.Specular;
-   // }
-   // return float4(IN.normalW, 1);
-    //return diffuse;
-    return float4((ambient + emissive + diffuse + specular).rgb, alpha * 1);
+    Kd *= float4(lighting.Diffuse.rgb, 1.0f);
+    Ks *= lighting.Specular;
+   
+    return float4((Ka + Ke + Kd + Ks).rgb, opacity * 1);
 }
