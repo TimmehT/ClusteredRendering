@@ -34,16 +34,13 @@ struct Material
 		//-------------------------(16b)
     float4 SpecularColor;
 		//-------------------------(16b)
-    float4 EmissiveColor;
-		//-------------------------(16b)
     bool UseDiffuseTexture;
     bool UseSpecularTexture;
-    bool UseEmmisiveTexture;
     bool UseNormalTexture;
-		//-------------------------(16b)
     bool UseOpacityTexture;
+		//-------------------------(16b)
     float AlphaThreshold;
-    float2 Pad;
+    float3 Pad;
 		//-------------------------(16b)
 		// 7 * 16 = 112 bytes
 };
@@ -56,7 +53,7 @@ struct LightingResult
 
 float3 ComputeNormalMapping(float3x3 TBN, Texture2D tex, SamplerState s, float2 texc)
 {
-    float3 normalMap = tex.Sample(s, texc).xyz;
+    float3 normalMap = tex.Sample(s, texc).rgb;
     normalMap = (2.0f * normalMap) - 1.0f;
 
     normalMap = mul(normalMap, TBN);
@@ -167,20 +164,16 @@ LightingResult ComputeLighting(StructuredBuffer<Light> lights, Material mat, flo
     float3 V = normalize(eyePos - P);
 
     LightingResult totalResult = (LightingResult) 0;
+
     for (int i = 0; i < NUM_LIGHTS; ++i)
     {
         LightingResult result = (LightingResult) 0;
 
         // Forget lights that are not enabled
 		if (!lights[i].Enabled) /*continue*/;
-        {
-            
-        }
 
-        if (lights[i].Type != DIRECTIONAL_LIGHT && length(lights[i].PositionWS.xyz - P) > lights[i].Range);
-        {
-            
-        }
+        if (lights[i].Type != DIRECTIONAL_LIGHT && length(lights[i].PositionWS.xyz - P) > lights[i].Range)/* continue*/;
+        
 
         switch (lights[i].Type)
         {

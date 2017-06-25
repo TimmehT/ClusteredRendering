@@ -37,11 +37,6 @@ void CMaterial::SetColor(ColorType type, XMFLOAT4 color)
 		m_matProperties.m_specularColor = color;
 	}
 	break;
-	case ColorType::Emissive:
-	{
-		m_matProperties.m_specularColor = color;
-	}
-	break;
 	}
 
 	m_update = true;
@@ -61,11 +56,6 @@ void CMaterial::SetTexture(TextureType type, CTexture* texture)
 	case TextureType::Specular:
 	{
 		m_matProperties.m_useSpecularTexture = (texture != nullptr);
-	}
-	break;
-	case TextureType::Emissive:
-	{
-		m_matProperties.m_useEmmisiveTexture = (texture != nullptr);
 	}
 	break;
 	case TextureType::Normal:
@@ -131,15 +121,17 @@ void CMaterial::Bind(ID3D11DeviceContext* context)
 		m_update = false;
 	}
 
-	for (auto texture : m_textures)
-	{
-		if (texture.second != nullptr)
-		{
-			CTexture* tex = texture.second;
-			tex->PSSetSRV(context, (uint32_t)texture.first);
-		}
-		
-	}
 
-	context->PSSetConstantBuffers(1, 1, &m_matConstantBuffer);
+		for (auto texture : m_textures)
+		{
+			if (texture.second != nullptr)
+			{
+				//CTexture* tex = texture.second;
+				texture.second->PSSetSRV(context, (uint32_t)texture.first);
+			}
+
+		}
+
+		context->PSSetConstantBuffers(1, 1, &m_matConstantBuffer);
+	
 }

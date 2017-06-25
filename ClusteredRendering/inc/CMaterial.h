@@ -10,9 +10,8 @@ public:
 	{
 		Diffuse = 0,
 		Specular = 1,
-		Emissive = 2,
-		Normal = 3,
-		Opacity = 4
+		Normal = 2,
+		Opacity = 3
 	};
 
 	enum ColorType
@@ -21,7 +20,6 @@ public:
 		Ambient = 1,
 		Diffuse = 2,
 		Specular = 3,
-		Emissive = 4
 	};
 
 	CMaterial(ID3D11Device* device);
@@ -44,10 +42,8 @@ private:
 			, m_ambientColor(0, 0, 0, 1)
 			, m_diffuseColor(1, 1, 1, 1)
 			, m_specularColor(0, 0, 0, 1)
-			, m_emissiveColor(0, 0, 0, 1)
 			, m_useDiffuseTexture(false)
 			, m_useSpecularTexture(false)
-			, m_useEmmisiveTexture(false)
 			, m_useNormalTexture(false)
 			, m_useOpacityTexture(false)
 			, m_alphaThreshold(0.1f)
@@ -64,18 +60,15 @@ private:
 		//-------------------------(16b)
 		XMFLOAT4 m_specularColor;
 		//-------------------------(16b)
-		XMFLOAT4 m_emissiveColor;
-		//-------------------------(16b)
 		uint32_t m_useDiffuseTexture;
 		uint32_t m_useSpecularTexture;
-		uint32_t m_useEmmisiveTexture;
 		uint32_t m_useNormalTexture;
-		//-------------------------(16b)
 		uint32_t m_useOpacityTexture;
-		float m_alphaThreshold;
-		XMFLOAT2 m_pad;
 		//-------------------------(16b)
-		// 7 * 16 = 112 bytes
+		float m_alphaThreshold;
+		XMFLOAT3 m_pad;
+		//-------------------------(16b)
+		// 
 	};
 
 	typedef std::map<TextureType, CTexture*> TextureMap;

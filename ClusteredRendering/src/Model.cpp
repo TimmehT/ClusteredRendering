@@ -119,8 +119,12 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 		else
 			vertex.texcoord = XMFLOAT2(0.0f, 0.0f);
 
-		vertex.tangent = XMFLOAT3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-		vertex.bitangent = XMFLOAT3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+		if (mesh->HasTangentsAndBitangents())
+		{
+			vertex.tangent = XMFLOAT3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+			vertex.bitangent = XMFLOAT3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+		}
+		
 
 		vertices.push_back(vertex);
 	}
@@ -225,10 +229,6 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 	{
 		material->SetColor(CMaterial::ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
 	}
-	if (mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == aiReturn_SUCCESS)
-	{
-		material->SetColor(CMaterial::ColorType::Emissive, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
 
 	if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 	{
@@ -240,14 +240,9 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 		material->SetTexture(CMaterial::TextureType::Specular, LoadMaterialTexture(mat, aiTextureType_SPECULAR, device, context));
 	}
 
-	if (mat->GetTextureCount(aiTextureType_EMISSIVE) > 0)
+	if (mat->GetTextureCount(aiTextureType_HEIGHT) > 0)
 	{
-		material->SetTexture(CMaterial::TextureType::Emissive, LoadMaterialTexture(mat, aiTextureType_EMISSIVE, device, context));
-	}
-
-	if (mat->GetTextureCount(aiTextureType_NORMALS) > 0)
-	{
-		material->SetTexture(CMaterial::TextureType::Normal, LoadMaterialTexture(mat, aiTextureType_NORMALS, device, context));
+		material->SetTexture(CMaterial::TextureType::Normal, LoadMaterialTexture(mat, aiTextureType_HEIGHT, device, context));
 	}
 
 	if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)

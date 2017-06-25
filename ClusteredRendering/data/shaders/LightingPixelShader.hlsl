@@ -13,9 +13,8 @@ cbuffer MaterialProperties : register(b1)
 
 Texture2D diffuseTexture : register(t0);
 Texture2D specularTexture : register(t1);
-Texture2D emissiveTexture : register(t2);
-Texture2D normalTexture : register(t3);
-Texture2D opacityTexture : register(t4);
+Texture2D normalTexture : register(t2);
+Texture2D opacityTexture : register(t3);
 StructuredBuffer<Light> lights : register(t5);
 SamplerState SampleType : register(s0);
 
@@ -31,7 +30,11 @@ struct PixelShaderInput
 
 float4 main(PixelShaderInput IN) : SV_TARGET
 {
+
     IN.normalW = normalize(IN.normalW);
+    IN.tangentW = normalize(IN.tangentW);
+    IN.binormalW = normalize(IN.binormalW);
+
     float3 P = IN.posW;
 
     float3 toEye = eyePosW.xyz - IN.posW;
@@ -42,7 +45,6 @@ float4 main(PixelShaderInput IN) : SV_TARGET
     Ka *= mat.GlobalAmbient;
     float4 Kd = mat.DiffuseColor;
     float4 Ks = mat.SpecularColor;
-    float4 Ke = mat.EmissiveColor;
     float3 N = IN.normalW;
     float opacity = Kd.a;
 
@@ -56,27 +58,47 @@ float4 main(PixelShaderInput IN) : SV_TARGET
         Ks = specularTexture.Sample(SampleType, IN.texc);
     }
 
-    if(mat.UseOpacityTexture)
-    {
-        opacity = opacityTexture.Sample(SampleType, IN.texc).r;
-    }
-
-    if(opacity < mat.AlphaThreshold)
-    {
-        discard;
-    }
-
     if(mat.UseNormalTexture)
     {
-        float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), (IN.normalW));
+        float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), IN.normalW);
 
-       //N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
+        TBN = transpose(TBN);
+       N = normalTexture.Sample(SampleType, IN.texc);
+       // N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
+    }
+    
+    if(mat.UseOpacityTexture)
+    {
+        opacity = opacityTexture.Sample(SampleType, IN.texc);
     }
 
-    LightingResult lighting = ComputeLighting(lights, mat, eyePosW, P, N);
+    /*if(mat.UseOpacityTexture)
+    {
+        opacity = opacityTexture.Sample(SampleType, IN.texc).r;
+    }*/
 
-    Kd *= float4(lighting.Diffuse.rgb, 1.0f);
-    Ks *= lighting.Specular;
+    /*if(opacity < mat.AlphaThreshold)
+    {
+        discard;
+    }*/
+
+    //if(mat.UseNormalTexture)
+    //{
+    //    float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), (IN.normalW));
+
+    //   //N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
+    //}
+
+    //LightingResult lighting = ComputeLighting(lights, mat, eyePosW, P, N);
+
+   // //Kd *= float4(lighting.Diffuse.rgb, 1.0f);
+   // Ks *= lighting.Specular;
    
-    return float4((Ka + Ke + Kd + Ks).rgb, opacity * 1);
+   //return float4((Ka + Kd + Ks).rgb, opacity * 1);
+    //return N;
+
+
+    return float4(N, 1);
+
+    //return float4(IN.binormalW, 1);
 }
