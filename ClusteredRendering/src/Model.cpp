@@ -23,7 +23,7 @@ Model::~Model()
 bool Model::LoadModel(const char* file, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_CalcTangentSpace);
+	const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_ConvertToLeftHanded | aiProcessPreset_TargetRealtime_MaxQuality );
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
@@ -117,7 +117,10 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 			vertex.texcoord = XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 		}
 		else
+		{
 			vertex.texcoord = XMFLOAT2(0.0f, 0.0f);
+		}
+			
 
 		if (mesh->HasTangentsAndBitangents())
 		{
@@ -213,7 +216,7 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 	aiColor4D ambientColor;
 	aiColor4D diffuseColor;
 	aiColor4D specular;
-	aiColor4D emissiveColor;
+	float specularPower;
 
 	CMaterial* material = new CMaterial(device);
 
@@ -229,7 +232,10 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 	{
 		material->SetColor(CMaterial::ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
 	}
-
+	if (mat->Get(AI_MATKEY_SHININESS, specularPower) == aiReturn_SUCCESS)
+	{
+		material->SetSpecularPower(specularPower);
+	}
 	if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 	{
 		material->SetTexture(CMaterial::TextureType::Diffuse, LoadMaterialTexture(mat, aiTextureType_DIFFUSE, device, context));

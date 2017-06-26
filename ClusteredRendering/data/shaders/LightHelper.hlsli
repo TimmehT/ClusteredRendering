@@ -51,13 +51,24 @@ struct LightingResult
     float4 Specular;
 };
 
-float3 ComputeNormalMapping(float3x3 TBN, Texture2D tex, SamplerState s, float2 texc)
+float3 ComputeNormalMapping(float3 normalMapSample, float3 unitNormalW, float3 tangentW, float3 binormalW )
 {
-    float3 normalMap = tex.Sample(s, texc).rgb;
-    normalMap = (2.0f * normalMap) - 1.0f;
+    float3 normalT = 2.0f * normalMapSample - 1.0f;
 
-    normalMap = mul(normalMap, TBN);
-    return normalize(normalMap);
+    float3 N = unitNormalW;
+    float3 T = normalize(tangentW);
+    float3 B = normalize(binormalW);
+
+    if(dot(cross(N, T), B) < 0.0f)
+    {
+        T *= -1;
+    }
+
+    float3x3 TBN = float3x3(T, B, N);
+
+    float3 bumpedNormalW = mul(normalT, TBN);
+
+    return normalize(bumpedNormalW);
 }
 
 float4 ComputeDiffuse(Light light, float3 L, float3 N)

@@ -64,6 +64,7 @@ newmtl Material__298
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\background.png
 	map_Kd textures\background.png
+	map_Ks textures\background_spec.png
 	map_bump textures\background_ddn.png
 
 newmtl 16___Default
@@ -251,7 +252,6 @@ newmtl fabric_e
 	map_Ka textures\sponza_fabric_green_diff.png
 	map_Kd textures\sponza_fabric_green_diff.png
 	map_Ks textures\sponza_fabric_spec.png
-	map_bump textures\sponza_fabric_green_ddn.png
 
 newmtl fabric_d
 	Ns 10.0000
@@ -267,7 +267,6 @@ newmtl fabric_d
 	map_Ka textures\sponza_fabric_blue_diff.png
 	map_Kd textures\sponza_fabric_blue_diff.png
 	map_Ks textures\sponza_fabric_spec.png
-	map_bump textures\sponza_fabric_green_ddn.png
 
 newmtl fabric_a
 	Ns 10.0000
@@ -283,7 +282,6 @@ newmtl fabric_a
 	map_Ka textures\sponza_fabric_diff.png
 	map_Kd textures\sponza_fabric_diff.png
 	map_Ks textures\sponza_fabric_spec.png
-	map_bump textures\sponza_fabric_green_ddn.png
 
 newmtl fabric_g
 	Ns 10.0000
@@ -298,6 +296,7 @@ newmtl fabric_g
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_curtain_blue_diff.png
 	map_Kd textures\sponza_curtain_blue_diff.png
+	map_Ks textures\sponza_curtain_spec.png
 	map_bump textures\sponza_curtain_blue_ddn.png
 
 newmtl fabric_c
@@ -313,6 +312,7 @@ newmtl fabric_c
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_curtain_diff.png
 	map_Kd textures\sponza_curtain_diff.png
+	map_Ks textures\sponza_curtain_spec.png
 	map_bump textures\sponza_curtain_blue_ddn.png
 
 newmtl fabric_f
@@ -328,6 +328,7 @@ newmtl fabric_f
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_curtain_green_diff.png
 	map_Kd textures\sponza_curtain_green_diff.png
+	map_Ks textures\sponza_curtain_spec.png
 	map_bump textures\sponza_curtain_blue_ddn.png
 
 newmtl chain
@@ -359,6 +360,7 @@ newmtl vase_hanging
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\vase_hanging.png
 	map_Kd textures\vase_hanging.png
+	map_Ks textures\vase_hanging_spec.png
 	map_bump textures\vase_hanging_ddn.png
 
 newmtl vase
@@ -374,6 +376,7 @@ newmtl vase
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\vase_dif.png
 	map_Kd textures\vase_dif.png
+	map_Ks textures\vase_spec.png
 	map_bump textures\vase_ddn.png
 
 newmtl Material__25
@@ -389,6 +392,7 @@ newmtl Material__25
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\lion.png
 	map_Kd textures\lion.png
+	map_Ks textures\lion_spec.png
 	map_bump textures\lion_ddn.png
 
 newmtl roof
@@ -404,4 +408,5 @@ newmtl roof
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\sponza_roof_diff.png
 	map_Kd textures\sponza_roof_diff.png
+	map_Ks textures\sponza_roof_spec.png
 	map_bump textures\sponza_roof_ddn.png

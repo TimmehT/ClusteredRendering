@@ -29,12 +29,13 @@ VertexShaderOutput main(AppData IN)
 {
     VertexShaderOutput OUT;
 
-    OUT.posH = mul(float4(IN.posL, 1.0f), worldViewProj);
     OUT.posW = mul(IN.posL, (float3x3)world);
     OUT.normalW = mul(IN.normalL,(float3x3)worldInvTranspose);
     OUT.texc = IN.texc;
-    OUT.tangentW = mul(IN.tangentL, (float3x3) worldInvTranspose);
-    OUT.binormalW = mul(IN.binormalL, (float3x3) worldInvTranspose);
+    OUT.tangentW = mul(IN.tangentL, (float3x3) world);
+    OUT.binormalW = mul(IN.binormalL, (float3x3) world);
+
+    OUT.posH = mul(float4(IN.posL, 1.0f), worldViewProj);
  
     return OUT;
 }

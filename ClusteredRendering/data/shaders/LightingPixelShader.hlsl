@@ -30,75 +30,62 @@ struct PixelShaderInput
 
 float4 main(PixelShaderInput IN) : SV_TARGET
 {
-
+    // Interping normal can unormalize it, so normalize it;
     IN.normalW = normalize(IN.normalW);
-    IN.tangentW = normalize(IN.tangentW);
-    IN.binormalW = normalize(IN.binormalW);
 
-    float3 P = IN.posW;
+    // Pos of this pixel in world
+    float3 pixelPos = IN.posW;
 
-    float3 toEye = eyePosW.xyz - IN.posW;
+    // Vector to the camera
+    float3 toEye = normalize(eyePosW.xyz - IN.posW);
 
-    float distToEye = length(toEye);
-
-    float4 Ka = mat.AmbientColor;
-    Ka *= mat.GlobalAmbient;
-    float4 Kd = mat.DiffuseColor;
-    float4 Ks = mat.SpecularColor;
-    float3 N = IN.normalW;
-    float opacity = Kd.a;
-
+    // Init colors
+    float4 ambientColor = mat.GlobalAmbient;
+    float4 diffuseColor = mat.DiffuseColor;
+    float4 specularColor = mat.SpecularColor;
+    float3 normal = IN.normalW;
+    
+    // Check for Diffuse Texture
     if(mat.UseDiffuseTexture)
     {
-        Kd = diffuseTexture.Sample(SampleType, IN.texc);
+        diffuseColor = diffuseTexture.Sample(SampleType, IN.texc);
+        //ambientColor *= diffuseColor * mat.AmbientColor;
     }
 
-    if(mat.UseSpecularTexture)
+    // Set up alpha and get any clip masks
+    float alpha = diffuseColor.a;
+    if (mat.UseOpacityTexture)
     {
-        Ks = specularTexture.Sample(SampleType, IN.texc);
+        alpha = opacityTexture.Sample(SampleType, IN.texc).r;
     }
 
-    if(mat.UseNormalTexture)
-    {
-        float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), IN.normalW);
-
-        TBN = transpose(TBN);
-       N = normalTexture.Sample(SampleType, IN.texc);
-       // N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
-    }
-    
-    if(mat.UseOpacityTexture)
-    {
-        opacity = opacityTexture.Sample(SampleType, IN.texc);
-    }
-
-    /*if(mat.UseOpacityTexture)
-    {
-        opacity = opacityTexture.Sample(SampleType, IN.texc).r;
-    }*/
-
-    /*if(opacity < mat.AlphaThreshold)
+    // Discard pixel if alpha is below threshold
+    if(alpha < mat.AlphaThreshold )
     {
         discard;
-    }*/
+    }
 
-    //if(mat.UseNormalTexture)
-    //{
-    //    float3x3 TBN = float3x3(normalize(IN.tangentW), normalize(IN.binormalW), (IN.normalW));
+    // Check for normal texture otherwise just use vertex norms
+    if(mat.UseNormalTexture)
+    {
+        float3 normalMapSample = normalTexture.Sample(SampleType, IN.texc).rgb;
+        normal = ComputeNormalMapping(normalMapSample, IN.normalW, IN.tangentW, IN.binormalW);
+    }
 
-    //   //N = ComputeNormalMapping(TBN, normalTexture, SampleType, IN.texc);
-    //}
 
-    //LightingResult lighting = ComputeLighting(lights, mat, eyePosW, P, N);
+    // Compute Lighting
+    LightingResult lighting = ComputeLighting(lights, mat, eyePosW, pixelPos, normal);
 
-   // //Kd *= float4(lighting.Diffuse.rgb, 1.0f);
-   // Ks *= lighting.Specular;
+    if(specularColor.w > 1.0f)
+    {
+        if (mat.UseSpecularTexture)
+        {
+            specularColor.rgb = specularTexture.Sample(SampleType, IN.texc).rgb;
+        }
+        specularColor *= lighting.Specular;
+    }
+
+   diffuseColor *= float4(lighting.Diffuse.rgb, 1.0f);
    
-   //return float4((Ka + Kd + Ks).rgb, opacity * 1);
-    //return N;
-
-
-    return float4(N, 1);
-
-    //return float4(IN.binormalW, 1);
+   return float4((ambientColor + diffuseColor + specularColor).rgb, alpha);
 }

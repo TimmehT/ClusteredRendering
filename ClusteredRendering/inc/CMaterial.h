@@ -27,6 +27,7 @@ public:
 
 
 	void SetColor(ColorType type, XMFLOAT4 color);
+	void SetSpecularPower(float pow);
 	void SetTexture(TextureType type, CTexture* texture);
 	void SetAlphaThreshold(float thresh);
 	void InitBuffer(ID3D11Device* device);

@@ -42,6 +42,12 @@ void CMaterial::SetColor(ColorType type, XMFLOAT4 color)
 	m_update = true;
 }
 
+void CMaterial::SetSpecularPower(float pow)
+{
+	m_matProperties.m_specularColor.w = pow;
+	m_update = true;
+}
+
 void CMaterial::SetTexture(TextureType type, CTexture* texture)
 {
 	m_textures[type] = texture;

@@ -496,9 +496,9 @@ bool LoadContent()
 		lights[i].m_positionWS = XMFLOAT4(x, y, z, 1);
 		lights[i].m_directionWS = XMFLOAT4(0, 0, -1, 0);
 		lights[i].m_color = XMFLOAT4(r, g, b, 1);
-		lights[i].m_attenuation = XMFLOAT3(1, 0.7f, 1.8f);
+		lights[i].m_attenuation = XMFLOAT3(1, 0.35f, 0.44f);
 		lights[i].m_specIntensity = 2.0f;
-		lights[i].m_range = 7.0f;
+		lights[i].m_range = 13.0f;
 		lights[i].m_spotAngle = 45.0f;
 		lights[i].m_enabled = true;
 		lights[i].m_type = LightType::Point;
