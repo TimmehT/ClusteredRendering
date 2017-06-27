@@ -8,12 +8,11 @@ public:
 	~InputManager();
 
 	// Keyboard Windows Messaging
-	bool KeyPressed(const int key)const;
+	bool KeyPressed(const int key);
 	bool KeyDown(const int key)const;
 
 
 	void SetKeyState(const int key, const bool state);
-	void UpdateKeys();
 
 	// Mouse RAW
 	int GetMouseDiffX()const;
@@ -21,7 +20,7 @@ public:
 	int GetMouseScrollPos()const;
 
 	bool MouseMoved()const;
-	bool MouseButtonPressed(const int button)const;
+	bool MouseButtonPressed(const int button);
 	bool MouseButtonDown(const int button)const;
 	bool MouseScrolled()const;
 
@@ -39,8 +38,8 @@ public:
 private:
 
 	// Keyboard
-	bool m_keys[256];
-	bool m_lastKeys[256];
+	bool m_keyDown[256];
+	bool m_keyPressed[256];
 
 	// Mouse
 	RAWINPUT* m_rawInput;
@@ -51,7 +50,7 @@ private:
 	long  m_mouseDiffY;
 	bool m_mouseMoved;
 	bool m_mouseButtonDown[3];
-	bool m_lastMouseButtonDown[3];
+	bool m_mouseButtonPressed[3];
 	bool m_mouseScrolled;
 	int m_mouseScrollPos;
 	int m_lastMouseScrollPos;

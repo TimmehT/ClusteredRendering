@@ -157,6 +157,7 @@
     <ClInclude Include="inc\Camera.h" />
     <ClInclude Include="inc\CMaterial.h" />
     <ClInclude Include="inc\CMesh.h" />
+    <ClInclude Include="inc\ConstantVars.h" />
     <ClInclude Include="inc\CTexture.h" />
     <ClInclude Include="inc\Direct3DManager.h" />
     <ClInclude Include="inc\DirectXPCH.h" />

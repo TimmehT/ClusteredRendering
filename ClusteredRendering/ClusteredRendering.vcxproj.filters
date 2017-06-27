@@ -150,6 +150,9 @@
     <ClInclude Include="inc\CMaterial.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\ConstantVars.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="data\shaders\LightingPixelShader.hlsl">

@@ -22,25 +22,26 @@ InputManager::~InputManager()
 {
 }
 
-bool InputManager::KeyPressed(const int key) const
+bool InputManager::KeyPressed(const int key)
 {
-	return (!m_lastKeys[key] && m_keys[key]);
+	if (m_keyPressed[key])
+	{
+		m_keyPressed[key] = false;
+		return true;
+	}
+	else
+		return false;
 }
 
 bool InputManager::KeyDown(const int key) const
 {
-	return m_keys[key];
+	return m_keyDown[key];
 }
 
 void InputManager::SetKeyState(const int key, const bool state)
 {
-	m_lastKeys[key] = m_keys[key];
-	m_keys[key] = state;
-}
-
-void InputManager::UpdateKeys()
-{
-	memcpy(m_lastKeys, m_keys, sizeof(m_keys));
+	m_keyPressed[key] = state;
+	m_keyDown[key] = state;
 }
 
 int InputManager::GetMouseDiffX() const
@@ -63,10 +64,13 @@ bool InputManager::MouseMoved() const
 	return m_mouseMoved;
 }
 
-bool InputManager::MouseButtonPressed(const int button) const
+bool InputManager::MouseButtonPressed(const int button)
 {
-	if (!m_lastMouseButtonDown[button] && m_mouseButtonDown[button])
+	if (m_mouseButtonPressed[button])
+	{
+		m_mouseButtonPressed[button] = false;
 		return true;
+	}
 	else
 		return false;
 }
@@ -114,39 +118,37 @@ void InputManager::UpdateMouse()
 			m_mouseDiffY += m_rawInput->data.mouse.lLastY;
 			m_mouseMoved = true;
 
+			
 			if (m_rawInput->data.mouse.ulButtons & RI_MOUSE_LEFT_BUTTON_DOWN)
 			{
-				m_lastMouseButtonDown[0] = m_mouseButtonDown[0];
+				m_mouseButtonPressed[0] = true;
 				m_mouseButtonDown[0] = true;
 			}
 
 			if (m_rawInput->data.mouse.ulButtons & RI_MOUSE_LEFT_BUTTON_UP)
 			{
-				m_lastMouseButtonDown[0] = m_mouseButtonDown[0];
 				m_mouseButtonDown[0] = false;
 			}
 
 			if (m_rawInput->data.mouse.ulButtons & RI_MOUSE_RIGHT_BUTTON_DOWN)
 			{
-				m_lastMouseButtonDown[1] = m_mouseButtonDown[1];
+				m_mouseButtonPressed[1] = true;
 				m_mouseButtonDown[1] = true;
 			}
 
 			if (m_rawInput->data.mouse.ulButtons & RI_MOUSE_RIGHT_BUTTON_UP)
 			{
-				m_lastMouseButtonDown[1] = m_mouseButtonDown[1];
 				m_mouseButtonDown[1] = false;
 			}
 
 			if (m_rawInput->data.mouse.ulButtons & RI_MOUSE_MIDDLE_BUTTON_DOWN)
 			{
-				m_lastMouseButtonDown[2] = m_mouseButtonDown[2];
+				m_mouseButtonPressed[2] = true;
 				m_mouseButtonDown[2] = true;
 			}
 
 			if (m_rawInput->data.mouse.ulButtons & RI_MOUSE_MIDDLE_BUTTON_UP)
 			{
-				m_lastMouseButtonDown[2] = m_mouseButtonDown[2];
 				m_mouseButtonDown[2] = false;
 			}
 
@@ -174,13 +176,6 @@ void InputManager::Reset()
 {
 	m_mouseMoved = false;
 	m_mouseScrolled = false;
-
-	//m_mouseButtonDown[0] = false;
-	//m_mouseButtonDown[1] = false;
-	//m_mouseButtonDown[2] = false;
-	m_lastMouseButtonDown[0] = true;
-	m_lastMouseButtonDown[1] = true;
-	m_lastMouseButtonDown[2] = true;
 
 	m_mouseDiffX = 0;
 	m_mouseDiffY = 0;

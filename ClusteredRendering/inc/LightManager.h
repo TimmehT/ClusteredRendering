@@ -1,4 +1,5 @@
 #pragma once
+#include "ConstantVars.h"
 
 enum class LightType : uint32_t
 {
@@ -15,9 +16,6 @@ struct Light
 	//(16b)
 	XMFLOAT4 m_color;
 	//(16b)
-	XMFLOAT3 m_attenuation;
-	float m_specIntensity;
-	//(16b)
 	float m_range;
 	float m_spotAngle;
 	uint32_t m_enabled;
@@ -29,8 +27,6 @@ struct Light
 		: m_positionWS(0, 0, 0, 1)
 		, m_directionWS(0, 0, -1, 0)
 		, m_color(1, 1, 1, 1)
-		, m_attenuation(1, 0, 0)
-		, m_specIntensity(1.0f)
 		, m_range(100.0f)
 		, m_spotAngle(45.0f)
 		, m_enabled(true)
@@ -46,6 +42,26 @@ public:
 	LightManager();
 	~LightManager();
 
+	void InitBuffers(ID3D11Device* device);
+	void BindBuffer(ID3D11DeviceContext* context);
+
+	void Update(float dt);
+
 
 private:
+
+	struct LightMovementData
+	{
+		XMFLOAT4 dir;
+		float time;
+	};
+
+	void RandomlyDistributeLights();
+
+	ID3D11Buffer* m_lightBuffer;
+
+	ID3D11ShaderResourceView* m_lightSRV;
+
+	Light m_lights[Constants::NUM_LIGHTS];
+
 };

@@ -29,7 +29,7 @@ VertexShaderOutput main(AppData IN)
 {
     VertexShaderOutput OUT;
 
-    OUT.posW = mul(IN.posL, (float3x3)world);
+    OUT.posW = mul(float4(IN.posL, 1.0f), world).xyz;
     OUT.normalW = mul(IN.normalL,(float3x3)worldInvTranspose);
     OUT.texc = IN.texc;
     OUT.tangentW = mul(IN.tangentL, (float3x3) world);

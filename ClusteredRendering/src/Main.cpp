@@ -41,13 +41,6 @@ ID3D11SamplerState* g_d3dSamplerState = nullptr;
 ID3D11Buffer* g_d3dObjectBuffer;
 ID3D11Buffer* g_d3dFrameBuffer;
 
-ID3D11Buffer* g_lightBuffer;
-ID3D11ShaderResourceView* g_lightSRV;
-
-const unsigned numLights = 50;
-
-Light lights[numLights];
-
 struct cbPerObject
 {
 	XMMATRIX g_worldMatrix;
@@ -60,7 +53,6 @@ struct cbPerFrame
 	XMFLOAT3 eyePos;
 	float pad;
 };
-// Demo parameteres
 
 cbPerObject perObject;
 cbPerFrame perFrame;
@@ -79,6 +71,11 @@ float prevRenderTime;
 
 XMMATRIX proj;
 XMMATRIX view;
+
+LightManager g_lightManager;
+
+float mult = 1.0f;
+bool animateLight = false;
 
 
 
@@ -428,8 +425,7 @@ bool LoadContent()
 	float clientWidth = static_cast<float>(clientRect.right - clientRect.left);
 	float clientHeight = static_cast<float>(clientRect.bottom - clientRect.top);
 
-	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 100.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
-
+	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 3000.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
 	proj = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat);
 
 	// Create a sampler state for texture sampling in the pixel shader
@@ -466,78 +462,19 @@ bool LoadContent()
 	g_sponza.SetRotation(0.0f, 90.0f, 0.0f);
 	g_sponza.SetTranslation(0.0f, -2.0f, 0.0f);
 	g_sponza.SetWorldMatrix(g_sponza.GetModelData().m_scaleMatrix, g_sponza.GetModelData().m_rotationMatrix, g_sponza.GetModelData().m_translationMatrix);
+	perObject.g_worldMatrix = XMMatrixIdentity();
+	
 
-	//light.m_directionWS = XMFLOAT4(0.0f, -1.0f, 1.0f, 1.0f);
-	//light.m_color = XMFLOAT4(1, 1, 1, 1);
-	//light.m_specIntensity = 0.0f;
-	//light.m_type = LightType::Directional;
+	g_lightManager.InitBuffers(g_d3dDevice);
 
-	D3D11_BUFFER_DESC lightBufferDesc;
-	ZeroMemory(&lightBufferDesc, sizeof(D3D11_BUFFER_DESC));
-	lightBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	lightBufferDesc.ByteWidth = sizeof(Light) * numLights;
-	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	lightBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	lightBufferDesc.StructureByteStride = sizeof(Light);
 
-	for (int i = 0; i < numLights; i++)
-	{
-		 ;
-
-		 float x = (-7.82f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (7.82f - (-7.82f)))));
-		float y = (static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 14.0f)));
-		float z = (-14.0f + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (14.0f - (-14.0f)))));
-
-		float r = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX));
-		float g = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX));
-		float b = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX));
-
-		lights[i].m_positionWS = XMFLOAT4(x, y, z, 1);
-		lights[i].m_directionWS = XMFLOAT4(0, 0, -1, 0);
-		lights[i].m_color = XMFLOAT4(r, g, b, 1);
-		lights[i].m_attenuation = XMFLOAT3(1, 0.35f, 0.44f);
-		lights[i].m_specIntensity = 2.0f;
-		lights[i].m_range = 13.0f;
-		lights[i].m_spotAngle = 45.0f;
-		lights[i].m_enabled = true;
-		lights[i].m_type = LightType::Point;
-	}
-
-	D3D11_SUBRESOURCE_DATA lightInitData;
-	lightInitData.pSysMem = &lights[0];
-	lightInitData.SysMemPitch = 0;
-	lightInitData.SysMemSlicePitch = 0;
-
-	hr = g_d3dDevice->CreateBuffer(&lightBufferDesc, &lightInitData, &g_lightBuffer);
-	if (FAILED(hr))
-	{
-		//MessageBoxA(m_Window.get_WindowHandle(), "Failed to create texture sampler.", "Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC lightSRVDesc;
-	ZeroMemory(&lightSRVDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-	lightSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-	lightSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	lightSRVDesc.BufferEx.FirstElement = 0;
-	lightSRVDesc.BufferEx.NumElements = numLights;
-
-	hr = g_d3dDevice->CreateShaderResourceView(g_lightBuffer, &lightSRVDesc, &g_lightSRV);
-	if (FAILED(hr))
-	{
-		//MessageBoxA(m_Window.get_WindowHandle(), "Failed to create texture sampler.", "Error", MB_OK | MB_ICONERROR);
-		return false;
-	}
-
+	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	return true;
 }
 
 void UnloadContent()
 {
-	SafeRelease(g_lightBuffer);
-	SafeRelease(g_lightSRV);
 	SafeRelease(g_d3dSamplerState);
 	SafeRelease(g_d3dFrameBuffer);
 	SafeRelease(g_d3dObjectBuffer);
@@ -567,13 +504,6 @@ int Run()
 		else
 		{
 			g_Timer.Tick();
-			/*DWORD currentTime = timeGetTime();
-			float deltaTime = (currentTime - previousTime) / 1000.0f;
-			previousTime = currentTime;
-			*/
-			// Cap the delta time to the max time step ( useful if your debugging
-			//and you dont want the deltaTime to explode
-			//deltaTime = std::min<float>(deltaTime, maxTimeStep);
 			CaculateRenderStats();
 			Update(g_Timer.DeltaTime());
 			Render();
@@ -686,10 +616,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void Update(float deltaTime)
 {
-	float mult = 1.0f;
+	
 	if (g_input.Initialized())
 	{
-
+		
 		if (g_input.KeyDown(VK_SHIFT))
 		{
 			mult = 2;
@@ -717,6 +647,13 @@ void Update(float deltaTime)
 			g_cam.MoveRight(deltaTime* mult);
 		}
 
+		if (g_input.KeyPressed(VK_L))
+		{
+			if (!animateLight)
+				animateLight = true;
+			else
+				animateLight = false;
+		}
 
 		if (g_input.MouseScrolled())
 		{
@@ -748,10 +685,16 @@ void Update(float deltaTime)
 		}
 	}
 	g_cam.Update();
+	
+	if (animateLight)
+	{
+		g_lightManager.Update(deltaTime);
+	}
 
 	 view = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat);
 
-	g_input.Reset();
+	 
+	 g_input.Reset();
 }
 
 
@@ -781,57 +724,40 @@ void Render()
 	assert(g_d3dDeviceContext);
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	D3D11_MAPPED_SUBRESOURCE mappedResource2;
-	ZeroMemory(&mappedResource2, sizeof(D3D11_MAPPED_SUBRESOURCE));
-
-	D3D11_MAPPED_SUBRESOURCE lightResource;
-
-	g_d3dDeviceContext->Map(g_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightResource);
-	memcpy(lightResource.pData, &lights[0], numLights * sizeof(Light));
-	g_d3dDeviceContext->Unmap(g_lightBuffer, 0);
 
 	Clear(Colors::CornflowerBlue, 1.0f, 0);
 
-	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	g_vs->Push();
+
+	perObject.g_worldMatrix = EngineMath::Float4X4ToMatrix(g_sponza.GetModelData().m_worldMatrix);
+	perObject.g_wvp = perObject.g_worldMatrix * view * proj;
+	perObject.g_wvp = XMMatrixTranspose(perObject.g_wvp);
+	perObject.g_worldMatrix = XMMatrixTranspose(perObject.g_worldMatrix);
+	perObject.g_invWorld = EngineMath::Float4X4ToMatrix(g_sponza.GetModelData().m_inverseWorld);
+
+	g_d3dDeviceContext->Map(g_d3dObjectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource2);
+	memcpy(mappedResource2.pData, &perObject, sizeof(perObject));
+	g_d3dDeviceContext->Unmap(g_d3dObjectBuffer, 0);
+	g_d3dDeviceContext->VSSetConstantBuffers(0, 1, &g_d3dObjectBuffer);
 
 	g_d3dDeviceContext->RSSetState(g_d3dRasterizerState);
 	g_d3dDeviceContext->RSSetViewports(1, &g_viewport);
 
 	g_ps->Push();
 
-	//perFrame.light = light;
 	perFrame.eyePos = g_cam.GetPosition();
 
 	g_d3dDeviceContext->Map(g_d3dFrameBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-
 	memcpy(mappedResource.pData, &perFrame, sizeof(perFrame));
-
 	g_d3dDeviceContext->Unmap(g_d3dFrameBuffer, 0);
-
 	g_d3dDeviceContext->PSSetConstantBuffers(0, 1, &g_d3dFrameBuffer);
-	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
-	g_d3dDeviceContext->PSSetShaderResources(5, 1, &g_lightSRV);
 
+	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
+
+	g_lightManager.BindBuffer(g_d3dDeviceContext);
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
-
-	perObject.g_worldMatrix = XMMatrixIdentity();
-	perObject.g_worldMatrix = EngineMath::Float4X4ToMatrix( g_sponza.GetModelData().m_worldMatrix);
-	perObject.g_wvp = perObject.g_worldMatrix * view * proj;
-	perObject.g_wvp = XMMatrixTranspose(perObject.g_wvp);
-	perObject.g_worldMatrix = XMMatrixTranspose(perObject.g_worldMatrix);
-	perObject.g_invWorld = EngineMath::Float4X4ToMatrix(g_sponza.GetModelData().m_inverseWorld);
-	
-
-	g_d3dDeviceContext->Map(g_d3dObjectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource2);
-
-	memcpy(mappedResource2.pData, &perObject, sizeof(perObject));
-
-	g_d3dDeviceContext->Unmap(g_d3dObjectBuffer, 0);
-
-	g_d3dDeviceContext->VSSetConstantBuffers(0, 1, &g_d3dObjectBuffer);
 
 	g_sponza.Render(g_d3dDeviceContext);
 

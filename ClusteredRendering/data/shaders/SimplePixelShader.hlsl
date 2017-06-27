@@ -51,7 +51,7 @@ float4 SimplePixelShader(PixelShaderInput IN) : SV_Target
         //float specFactor = pow(max(dot(v, toEye), 0.0f), mat.Specular.w);
 
         diffuse = diffFactor * textureColor * light.Color;
-        spec = textureColor * light.Color * light.SpecIntensity;
+        spec = textureColor * light.Color;
     }
 
     float4 final = (ambient + diffuse) + spec;

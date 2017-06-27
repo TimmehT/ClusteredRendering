@@ -23,7 +23,7 @@ Model::~Model()
 bool Model::LoadModel(const char* file, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_ConvertToLeftHanded | aiProcessPreset_TargetRealtime_MaxQuality );
+	const aiScene* scene = importer.ReadFile(file,  aiProcess_ConvertToLeftHanded | aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Triangulate | aiProcess_CalcTangentSpace );
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{

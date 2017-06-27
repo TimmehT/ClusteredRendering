@@ -39,7 +39,7 @@ private:
 	struct MaterialProperties
 	{
 		MaterialProperties()
-			: m_globalAmbient(0.1f, 0.1f, 0.1f, 1.0f)
+			: m_globalAmbient(0.2f, 0.2f, 0.2f, 1.0f)
 			, m_ambientColor(0, 0, 0, 1)
 			, m_diffuseColor(1, 1, 1, 1)
 			, m_specularColor(0, 0, 0, 1)

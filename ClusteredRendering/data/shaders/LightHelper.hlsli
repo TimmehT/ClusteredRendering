@@ -13,9 +13,6 @@ struct Light
 	//(16b)
     float4 Color;
 	//(16b)
-    float3 Attenuation;
-    float SpecIntensity;
-	//(16b)
     float Range;
     float SpotAngle;
     bool Enabled;
@@ -71,23 +68,15 @@ float3 ComputeNormalMapping(float3 normalMapSample, float3 unitNormalW, float3 t
     return normalize(bumpedNormalW);
 }
 
-float4 ComputeDiffuse(Light light, float3 L, float3 N)
+float ComputeAttenuation(Light light, float distance)
 {
-    float NdotL = max(0, dot(N, L));
-    return light.Color * NdotL;
+    return 1.0f - smoothstep(0, light.Range, distance);
 }
 
-float4 ComputeSpecular(Light light, float3 L, float3 N, float3 V, float a)
+float ComputeAtten2(float d, float r)
 {
-    float3 R = normalize(reflect(-L, N));
-    float RdotV = max(0, dot(R, V));
 
-    return light.Color * pow(RdotV, a);
-}
-
-float ComputeAttenuation(float val, float3 atten, float d)
-{
-    return val / (atten.x + atten.y * d + atten.z * d * d);
+	return 1.0f / pow(((d / r) + 1.0f), 2.0f);
 }
 
 float ComputeSpotCone(Light light, float3 L)
@@ -100,7 +89,7 @@ float ComputeSpotCone(Light light, float3 L)
     return smoothstep(minCos, maxCos, cosAngle);
 }
 
-LightingResult ComputeDirectionalLight(Light light, Material mat, float3 V, float3 N )
+LightingResult ComputeDirectionalLight(Light light, Material mat, float3 toEye, float3 normal )
 {
 
     LightingResult result;
@@ -110,15 +99,25 @@ LightingResult ComputeDirectionalLight(Light light, Material mat, float3 V, floa
     
 
     // Get light vec
-    float3 L = -light.DirectionWS.xyz;
+    float3 lightVec = -light.DirectionWS.xyz;
 
-    result.Diffuse = ComputeDiffuse(light, L, N);
-    result.Specular = ComputeSpecular(light, L, N, V, mat.SpecularColor.w);
+	float diffuseFactor = dot(lightVec, normal);
+
+	// Flatten to avoid dynamic branching.
+	[flatten]
+	if (diffuseFactor > 0.0f)
+	{
+		float3 v = reflect(-lightVec, normal);
+		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.SpecularColor.w);
+
+		result.Diffuse = diffuseFactor * light.Color;
+		result.Specular = specFactor * light.Color;
+	}
 
     return result;
 }
 
-LightingResult ComputePointLight(Light light, Material mat, float3 V, float3 P, float3 N)
+LightingResult ComputePointLight(Light light, Material mat, float3 toEye, float3 pos, float3 normal)
 {
 
     LightingResult result;
@@ -127,24 +126,40 @@ LightingResult ComputePointLight(Light light, Material mat, float3 V, float3 P, 
     result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Get vector from surface to light
-    float3 L = light.PositionWS.xyz - P;
+    float3 lightVec = light.PositionWS.xyz - pos;
 
     // Get distance from surface to light
-    float distance = length(L);
+    float distance = length(lightVec);
+
+	if (distance > light.Range)
+		return result;
 
     // Normalize light vector
-    L = L / distance;
+	lightVec /= distance;
 
     // Compute attenuation
-    float attenuation = ComputeAttenuation(1.0f, light.Attenuation, distance);
+    float attenuation = ComputeAttenuation(light, distance);
 
-    result.Diffuse = ComputeDiffuse(light, L, N) * attenuation;
-    result.Specular = ComputeSpecular(light, L, N, V, mat.SpecularColor.w) * attenuation;
+	// Compute diff & spec
+	float diffuseFactor = dot(lightVec, normal);
+
+	[flatten]
+	if (diffuseFactor > 0.0f)
+	{
+		float3 v = reflect(-lightVec, normal);
+		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.SpecularColor.w);
+
+		result.Diffuse = diffuseFactor * light.Color;
+		result.Specular = specFactor * light.Color;
+	}
+
+    result.Diffuse *= attenuation;
+    result.Specular *= attenuation;
 
     return result;
 }
 
-LightingResult ComputeSpotLight(Light light, Material mat, float3 V, float3 P, float3 N)
+LightingResult ComputeSpotLight(Light light, Material mat, float3 toEye, float3 pos, float3 normal)
 {
     LightingResult result;
 
@@ -153,27 +168,40 @@ LightingResult ComputeSpotLight(Light light, Material mat, float3 V, float3 P, f
     result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Get vector from surface to light
-    float3 L = light.PositionWS.xyz - P;
+    float3 lightVec = light.PositionWS.xyz - pos;
 
     // Get distance from surface to light
-    float distance = length(L);
+    float distance = length(lightVec);
+
+	if (distance > light.Range)
+		return result;
 
     // Normalize light vector
-    L = L / distance;
+	lightVec /= distance;
 
-    float attenuation = ComputeAttenuation(1.0f, light.Attenuation, distance);
-    float intensity = ComputeSpotCone(light, L);
+	float diffuseFactor = dot(lightVec, normal);
 
-    result.Diffuse = ComputeDiffuse(light, L, N) * attenuation * intensity;
-    result.Specular = ComputeSpecular(light, L, N, V, mat.SpecularColor.w) * attenuation * intensity;
+    float spot = ComputeSpotCone(light, lightVec);
+	float attenuation = ComputeAttenuation(light, distance);
+
+	[flatten]
+	if (diffuseFactor > 0.0f)
+	{
+		float3 v = reflect(-lightVec, normal);
+		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.SpecularColor.w);
+
+		result.Diffuse = diffuseFactor * light.Color;
+		result.Specular = specFactor * light.Color;
+	}
+
+    result.Diffuse *= attenuation * spot;
+    result.Specular *= attenuation * spot;
 
     return result;
 }
 
-LightingResult ComputeLighting(StructuredBuffer<Light> lights, Material mat, float3 eyePos, float3 P, float3 N)
+LightingResult ComputeLighting(StructuredBuffer<Light> lights, Material mat, float3 toEye, float3 pos, float3 normal)
 {
-    float3 V = normalize(eyePos - P);
-
     LightingResult totalResult = (LightingResult) 0;
 
     for (int i = 0; i < NUM_LIGHTS; ++i)
@@ -181,26 +209,23 @@ LightingResult ComputeLighting(StructuredBuffer<Light> lights, Material mat, flo
         LightingResult result = (LightingResult) 0;
 
         // Forget lights that are not enabled
-		if (!lights[i].Enabled) /*continue*/;
-
-        if (lights[i].Type != DIRECTIONAL_LIGHT && length(lights[i].PositionWS.xyz - P) > lights[i].Range)/* continue*/;
-        
+		if (!lights[i].Enabled) continue;
 
         switch (lights[i].Type)
         {
         case DIRECTIONAL_LIGHT:
         {
-            result = ComputeDirectionalLight(lights[i], mat, V, N);
+            result = ComputeDirectionalLight(lights[i], mat, toEye, normal);
         }
         break;
         case POINT_LIGHT:
         {
-            result = ComputePointLight(lights[i], mat, V, P, N);
+            result = ComputePointLight(lights[i], mat, toEye, pos, normal);
         }
         break;
         case SPOT_LIGHT:
         {
-            result = ComputeSpotLight(lights[i], mat, V, P, N);
+            result = ComputeSpotLight(lights[i], mat, toEye, pos, normal);
         }
         break;
         }
