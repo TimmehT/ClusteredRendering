@@ -8,23 +8,25 @@
 #include "CTexture.h"
 #include "Shader.h"
 #include "LightManager.h"
+#include "ConstantVars.h"
 
 // Define window & VSync Setting
-unsigned __int16 g_windowWidth = 1280;
-unsigned __int16 g_windowHeight = 720;
+unsigned __int16 g_windowWidth = Constants::CLIENT_WIDTH;
+unsigned __int16 g_windowHeight = Constants::CLIENT_HEIGHT;
 LPCSTR g_windowClassName = "DirectXWindowClass";
 LPCSTR g_windowName = "Clustered Rendering Engine";
 HWND g_windowHandle = 0;
 
 const BOOL g_enableVSync = FALSE;
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DX11
 // Direct 3D device and swap chain
 ID3D11Device* g_d3dDevice = nullptr;
 ID3D11DeviceContext* g_d3dDeviceContext = nullptr;
 IDXGISwapChain* g_d3dSwapChain = nullptr;
 
 // Render target view for the back buffer of the swap chain
-ID3D11RenderTargetView* g_d3dRenderTargetView = nullptr;
+ID3D11RenderTargetView* g_backBuffer = nullptr;
 // Depth/stencil view for use as a depth buffer
 ID3D11DepthStencilView* g_d3dDepthStencilView = nullptr;
 // A texture to associate to the depth stencil view
@@ -36,10 +38,18 @@ ID3D11DepthStencilState* g_d3dDepthStencilState = nullptr;
 ID3D11RasterizerState* g_d3dRasterizerState = nullptr;
 D3D11_VIEWPORT g_viewport = { 0 };
 
-ID3D11SamplerState* g_d3dSamplerState = nullptr;
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Shaders
+Shader* g_vs;
+Shader* g_ps;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LightResources
+LightManager g_lightManager;
+ID3D11ShaderResourceView* depthBufferView;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ModelResources
+Model g_sponza;
 
 ID3D11Buffer* g_d3dObjectBuffer;
-ID3D11Buffer* g_d3dFrameBuffer;
 
 struct cbPerObject
 {
@@ -48,36 +58,34 @@ struct cbPerObject
 	XMMATRIX g_wvp;
 };
 
+cbPerObject perObject;
+
+ID3D11SamplerState* g_d3dSamplerState = nullptr;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CameraResources
+Camera g_cam;
+XMMATRIX proj;
+XMMATRIX view;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PerFrameBuffers
+ID3D11Buffer* g_d3dFrameBuffer;
+
 struct cbPerFrame
 {
 	XMFLOAT3 eyePos;
 	float pad;
 };
 
-cbPerObject perObject;
 cbPerFrame perFrame;
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Other
 GameTimer g_Timer;
-Camera g_cam;
 InputManager g_input;
-
-Model g_sponza;
-
-Shader* g_vs;
-Shader* g_ps;
-
 float renderTime;
 float prevRenderTime;
-
-XMMATRIX proj;
-XMMATRIX view;
-
-LightManager g_lightManager;
-
 float mult = 1.0f;
 bool animateLight = false;
-
-
+std::vector<float>frameTimes;
 
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -304,7 +312,7 @@ int InitDirectX(HINSTANCE hInstance, BOOL vSync)
 		return -1;
 	}
 
-	hr = g_d3dDevice->CreateRenderTargetView(backBuffer, nullptr, &g_d3dRenderTargetView);
+	hr = g_d3dDevice->CreateRenderTargetView(backBuffer, nullptr, &g_backBuffer);
 	if (FAILED(hr))
 	{
 		return -1;
@@ -338,6 +346,8 @@ int InitDirectX(HINSTANCE hInstance, BOOL vSync)
 	{
 		return -1;
 	}
+
+	hr = g_d3dDevice->CreateShaderResourceView(g_d3dDepthStencilBuffer, nullptr, &depthBufferView);
 
 	// Setup depth/stencil state.
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc;
@@ -416,16 +426,8 @@ bool LoadContent()
 	g_ps = new Shader(g_d3dDevice, g_d3dDeviceContext);
 	g_ps->LoadShaderFromFile(PixelShader, L"../data/shaders/LightingPixelShader.hlsl", "main", "latest");
 
-	// Setup the projection matrix.
-	RECT clientRect;
-	GetClientRect(g_windowHandle, &clientRect);
-
-	// Compute the exact client dimensions.
-	// This is required for a correct projection matrix.
-	float clientWidth = static_cast<float>(clientRect.right - clientRect.left);
-	float clientHeight = static_cast<float>(clientRect.bottom - clientRect.top);
-
-	g_cam.SetLens(XMConvertToRadians(68.0f), 0.1f, 3000.0f, static_cast<unsigned int>(clientWidth), static_cast<unsigned int>(clientHeight));
+	// Set up proj matrix
+	g_cam.SetLens(Constants::FOV, Constants::NEARZ, Constants::FARZ, Constants::CLIENT_WIDTH, Constants::CLIENT_HEIGHT);
 	proj = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().projMat);
 
 	// Create a sampler state for texture sampling in the pixel shader
@@ -701,7 +703,7 @@ void Update(float deltaTime)
 // Clear the color and depth buffers
 void Clear(const FLOAT clearColor[4], FLOAT clearDepth, UINT8 clearStencil)
 {
-	g_d3dDeviceContext->ClearRenderTargetView(g_d3dRenderTargetView, clearColor);
+	g_d3dDeviceContext->ClearRenderTargetView(g_backBuffer, clearColor);
 	g_d3dDeviceContext->ClearDepthStencilView(g_d3dDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, clearDepth, clearStencil);
 }
 
@@ -755,8 +757,10 @@ void Render()
 
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 
+	g_d3dDeviceContext->PSSetShaderResources(4, 1, &depthBufferView);
+	g_lightManager.BuildClusters(g_cam.GetPosition(), g_cam.GetLook(), g_cam.GetRight(), g_cam.GetUp());
 	g_lightManager.BindBuffer(g_d3dDeviceContext);
-	g_d3dDeviceContext->OMSetRenderTargets(1, &g_d3dRenderTargetView, g_d3dDepthStencilView);
+	g_d3dDeviceContext->OMSetRenderTargets(1, &g_backBuffer, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
 
 	g_sponza.Render(g_d3dDeviceContext);
@@ -768,8 +772,9 @@ void Cleanup()
 {
 
 	g_d3dSwapChain->SetFullscreenState(FALSE, nullptr);
+	SafeRelease(depthBufferView);
 	SafeRelease(g_d3dDepthStencilView);
-	SafeRelease(g_d3dRenderTargetView);
+	SafeRelease(g_backBuffer);
 	SafeRelease(g_d3dDepthStencilBuffer);
 	SafeRelease(g_d3dDepthStencilState);
 	SafeRelease(g_d3dRasterizerState);
@@ -782,6 +787,7 @@ void CaculateRenderStats()
 {
 	static int frameCount = 0;
 	static float timeElapsed = 0.0f;
+	float avg = 0;
 
 	frameCount++;
 
@@ -790,14 +796,25 @@ void CaculateRenderStats()
 		float fps = (float)frameCount;
 		prevRenderTime = renderTime;
 		renderTime = 1000.0f / fps;
+		frameTimes.push_back(renderTime);
 		float var = std::abs(renderTime - prevRenderTime);
+		float totalframe = 0;
+		for (unsigned int i = 0; i < frameTimes.size(); i++)
+		{
+			
+			totalframe += frameTimes[i];
+			avg = totalframe / frameTimes.size();
+
+		}
 
 
 		std::ostringstream outs;
 		outs.precision(6);
 		outs << g_windowName << "    "
-			<< "fps: " << fps << "    "
-			<< "ft: " << renderTime << " ms" << "    " << "var: +-" << var << " ms ";
+			<< "FPS: " << fps << "    "
+			<< "Frame Time: " << renderTime << " ms" << "    " 
+			<< "Avg. Frame Time: " << avg << " ms" << "    "
+			<< "var: +-" << var << " ms" ;
 		SetWindowText(g_windowHandle, outs.str().c_str());
 
 

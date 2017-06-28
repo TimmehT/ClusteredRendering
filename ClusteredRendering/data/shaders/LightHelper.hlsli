@@ -7,7 +7,8 @@
 
 struct Light
 {
-    float4 PositionWS;
+    float3 PositionWS;
+	float Pad;
 	//(16b)
     float4 DirectionWS;
 	//(16b)
@@ -126,7 +127,7 @@ LightingResult ComputePointLight(Light light, Material mat, float3 toEye, float3
     result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Get vector from surface to light
-    float3 lightVec = light.PositionWS.xyz - pos;
+    float3 lightVec = light.PositionWS - pos;
 
     // Get distance from surface to light
     float distance = length(lightVec);
@@ -168,7 +169,7 @@ LightingResult ComputeSpotLight(Light light, Material mat, float3 toEye, float3 
     result.Specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Get vector from surface to light
-    float3 lightVec = light.PositionWS.xyz - pos;
+    float3 lightVec = light.PositionWS - pos;
 
     // Get distance from surface to light
     float distance = length(lightVec);

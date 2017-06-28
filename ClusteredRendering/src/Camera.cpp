@@ -126,5 +126,20 @@ XMFLOAT3 Camera::GetPosition()
 	return m_position;
 }
 
+XMFLOAT3 Camera::GetUp()
+{
+	return m_up;
+}
+
+XMFLOAT3 Camera::GetLook()
+{
+	return m_look;
+}
+
+XMFLOAT3 Camera::GetRight()
+{
+	return m_right;
+}
+
 
 

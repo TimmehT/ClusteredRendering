@@ -15,6 +15,7 @@ Texture2D diffuseTexture : register(t0);
 Texture2D specularTexture : register(t1);
 Texture2D normalTexture : register(t2);
 Texture2D opacityTexture : register(t3);
+Texture2D depthTex : register(t4);
 StructuredBuffer<Light> lights : register(t5);
 SamplerState SampleType : register(s0);
 
@@ -86,4 +87,6 @@ float4 main(PixelShaderInput IN) : SV_TARGET
    diffuseColor *= float4(lighting.Diffuse.rgb, 1.0f);
    
    return float4((ambientColor + diffuseColor + specularColor).rgb, alpha);
+
+   //return depthTex.Sample(SampleType, IN.texc);
 }

@@ -290,7 +290,7 @@ CTexture * Model::LoadMaterialTexture(aiMaterial * mat, aiTextureType type, ID3D
 
 			filepath = std::string(directory.c_str()) + '/' + std::string(filepath.c_str());
 			wchar_t wc_path[MAX_PATH];
-			wchar_t wc_p;
+			//wchar_t wc_p;
 
 
 			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);

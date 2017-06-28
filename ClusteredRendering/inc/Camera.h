@@ -28,6 +28,10 @@ public:
 	CameraData& GetCamData();
 	
 	XMFLOAT3 GetPosition();
+	XMFLOAT3 GetUp();
+	XMFLOAT3 GetLook();
+	XMFLOAT3 GetRight();
+
 
 private:
 	XMFLOAT3 m_up;
