@@ -44,7 +44,7 @@ Shader* g_ps;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LightResources
 LightManager g_lightManager;
-ID3D11ShaderResourceView* depthBufferView;
+//ID3D11ShaderResourceView* depthBufferView;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ModelResources
 Model g_sponza;
@@ -347,7 +347,7 @@ int InitDirectX(HINSTANCE hInstance, BOOL vSync)
 		return -1;
 	}
 
-	hr = g_d3dDevice->CreateShaderResourceView(g_d3dDepthStencilBuffer, nullptr, &depthBufferView);
+	//hr = g_d3dDevice->CreateShaderResourceView(g_d3dDepthStencilBuffer, nullptr, &depthBufferView);
 
 	// Setup depth/stencil state.
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc;
@@ -460,7 +460,7 @@ bool LoadContent()
 		return false;
 	}
 
-	g_sponza.SetScale(0.01f, 0.01f, 0.01f);
+	g_sponza.SetScale(0.1f, 0.1f, 0.1f);
 	g_sponza.SetRotation(0.0f, 90.0f, 0.0f);
 	g_sponza.SetTranslation(0.0f, -2.0f, 0.0f);
 	g_sponza.SetWorldMatrix(g_sponza.GetModelData().m_scaleMatrix, g_sponza.GetModelData().m_rotationMatrix, g_sponza.GetModelData().m_translationMatrix);
@@ -757,8 +757,9 @@ void Render()
 
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 
-	g_d3dDeviceContext->PSSetShaderResources(4, 1, &depthBufferView);
-	g_lightManager.BuildClusters(g_cam.GetPosition(), g_cam.GetLook(), g_cam.GetRight(), g_cam.GetUp());
+	//g_d3dDeviceContext->PSSetShaderResources(4, 1, &depthBufferView);
+	//g_lightManager.BuildClusters(g_cam.GetPosition(), g_cam.GetLook(), g_cam.GetRight(), g_cam.GetUp());
+	//g_lightManager.CheckIntersection();
 	g_lightManager.BindBuffer(g_d3dDeviceContext);
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_backBuffer, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
@@ -772,7 +773,7 @@ void Cleanup()
 {
 
 	g_d3dSwapChain->SetFullscreenState(FALSE, nullptr);
-	SafeRelease(depthBufferView);
+	//SafeRelease(depthBufferView);
 	SafeRelease(g_d3dDepthStencilView);
 	SafeRelease(g_backBuffer);
 	SafeRelease(g_d3dDepthStencilBuffer);

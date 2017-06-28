@@ -57,10 +57,10 @@ float3 ComputeNormalMapping(float3 normalMapSample, float3 unitNormalW, float3 t
     float3 T = normalize(tangentW);
     float3 B = normalize(binormalW);
 
-    if(dot(cross(N, T), B) < 0.0f)
-    {
-        T *= -1;
-    }
+   // if(dot(cross(N, T), B) < 0.0f)
+    //{
+      //  T *= -1;
+    //}
 
     float3x3 TBN = float3x3(T, B, N);
 

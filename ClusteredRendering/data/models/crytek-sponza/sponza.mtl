@@ -300,7 +300,7 @@ newmtl fabric_g
 	map_Ka textures\sponza_curtain_blue_diff.png
 	map_Kd textures\sponza_curtain_blue_diff.png
 	map_Ks textures\sponza_curtain_spec.png
-	map_bump textures\sponza_curtain_blue_ddn.png
+	map_bump textures\sponza_curtain_ddn.png
 
 newmtl fabric_c
 	Ns 10.0000
@@ -316,7 +316,7 @@ newmtl fabric_c
 	map_Ka textures\sponza_curtain_diff.png
 	map_Kd textures\sponza_curtain_diff.png
 	map_Ks textures\sponza_curtain_spec.png
-	map_bump textures\sponza_curtain_blue_ddn.png
+	map_bump textures\sponza_curtain_ddn.png
 
 newmtl fabric_f
 	Ns 10.0000
@@ -332,7 +332,7 @@ newmtl fabric_f
 	map_Ka textures\sponza_curtain_green_diff.png
 	map_Kd textures\sponza_curtain_green_diff.png
 	map_Ks textures\sponza_curtain_spec.png
-	map_bump textures\sponza_curtain_blue_ddn.png
+	map_bump textures\sponza_curtain_ddn.png
 
 newmtl chain
 	Ns 10.0000
@@ -348,7 +348,7 @@ newmtl chain
 	map_Ka textures\chain_texture.png
 	map_Kd textures\chain_texture.png
 	map_d textures\chain_texture_mask.png
-	map_bump textures\chain_texture_ddn.png
+	map_bump textures\chain_ddn.png
 
 newmtl vase_hanging
 	Ns 10.0000

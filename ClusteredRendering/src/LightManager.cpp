@@ -140,7 +140,7 @@ void LightManager::BindBuffer(ID3D11DeviceContext* context)
 	memcpy(lightBufferSubresource.pData, &m_lightIndexList[0], Constants::LIGHT_INDEX_COUNT * sizeof(uint32_t));
 	context->Unmap(m_lightIndexBuffer, 0);*/
 
-	context->PSSetShaderResources(5, 1, &m_lightSRV);
+	context->PSSetShaderResources(4, 1, &m_lightSRV);
 
 	
 }
@@ -158,17 +158,16 @@ void LightManager::Update(float dt)
 
 void LightManager::RandomlyDistributeLights()
 {
-	XMFLOAT3 max = XMFLOAT3(17.9990796f, 14.2943311f, 11.8280701f);
-	XMFLOAT3 min = XMFLOAT3(-19.2094580f, -12.6442505f, -11.0542590f);
-
-	float range = 10.0f;
+	srand(1);
+	XMFLOAT3 max = XMFLOAT3(90.0f, 180.0f, 100.0f);
+	XMFLOAT3 min = XMFLOAT3(-90.0f, 0.0f, -100.0f);
 
 	for (int i = 0; i < Constants::NUM_LIGHTS; i++)
 	{
 		m_lights[i].m_positionWS = XMFLOAT3(GetRandomFloat(min.x, max.x), GetRandomFloat(min.y, max.z), GetRandomFloat(min.z, max.z));
 		m_lights[i].m_directionWS = XMFLOAT4(0, -1, 0, 0);
 		m_lights[i].m_color = GetRandomColor();
-		m_lights[i].m_range = 10.0f;
+		m_lights[i].m_range = GetRandomFloat(10.0f, 100.0f);
 		m_lights[i].m_spotAngle = 45.0f;
 		m_lights[i].m_enabled = true;
 		m_lights[i].m_type = LightType::Point;

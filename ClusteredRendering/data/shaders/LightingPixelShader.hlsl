@@ -15,8 +15,7 @@ Texture2D diffuseTexture : register(t0);
 Texture2D specularTexture : register(t1);
 Texture2D normalTexture : register(t2);
 Texture2D opacityTexture : register(t3);
-Texture2D depthTex : register(t4);
-StructuredBuffer<Light> lights : register(t5);
+StructuredBuffer<Light> lights : register(t4);
 SamplerState SampleType : register(s0);
 
 struct PixelShaderInput
@@ -39,7 +38,7 @@ float4 main(PixelShaderInput IN) : SV_TARGET
 	 toEye = normalize(toEye);
 
     // Init colors
-    float4 ambientColor = float4(0,0,0,1)/*mat.GlobalAmbient*/;
+    float4 ambientColor = float4(0.01f,0.01f,0.01f,1)/*mat.GlobalAmbient*/;
     float4 diffuseColor = mat.DiffuseColor;
     float4 specularColor = mat.SpecularColor;
     float3 normal = IN.normalW;
@@ -69,6 +68,8 @@ float4 main(PixelShaderInput IN) : SV_TARGET
     {
         float3 normalMapSample = normalTexture.Sample(SampleType, IN.texc).rgb;
         normal = ComputeNormalMapping(normalMapSample, IN.normalW, IN.tangentW, IN.binormalW);
+
+		//return float4(normal, 1);
     }
 
 
@@ -87,6 +88,4 @@ float4 main(PixelShaderInput IN) : SV_TARGET
    diffuseColor *= float4(lighting.Diffuse.rgb, 1.0f);
    
    return float4((ambientColor + diffuseColor + specularColor).rgb, alpha);
-
-   //return depthTex.Sample(SampleType, IN.texc);
 }
