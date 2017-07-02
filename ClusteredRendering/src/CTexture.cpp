@@ -33,18 +33,12 @@ void CTexture::PSSetSRV(ID3D11DeviceContext* context, unsigned int slot)
 	context->PSSetShaderResources(slot, 1, &m_textureSRV);
 }
 
-const TextureData & CTexture::GetTexData()
+const aiString CTexture::GetPath()
 {
-	// TODO: insert return statement here
-	return m_texData;
+	return m_path;
 }
 
 void CTexture::SetPath(aiString &path)
 {
-	m_texData.path = path;
-}
-
-void CTexture::SetFinalPath(const wchar_t* path)
-{
-	wcscpy_s(&m_texData.finalPath, MAX_PATH, path);
+	m_path = path;
 }

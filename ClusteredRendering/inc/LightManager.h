@@ -2,41 +2,7 @@
 #include "ConstantVars.h"
 
 
-enum class LightType : uint32_t
-{
-	Point = 0,
-	Spot = 1,
-	Directional = 2
-};
 
-struct Light
-{
-	XMFLOAT3 m_positionWS;
-	float m_pad;
-	//(16b)
-	XMFLOAT4 m_directionWS;
-	//(16b)
-	XMFLOAT4 m_color;
-	//(16b)
-	float m_range;
-	float m_spotAngle;
-	uint32_t m_enabled;
-	LightType m_type;
-	//(16b)
-	//(16 * 5 = 80b)
-
-	Light()
-		: m_positionWS(0, 0, 0)
-		, m_directionWS(0, 0, -1, 1)
-		, m_color(1, 1, 1, 1)
-		, m_range(100.0f)
-		, m_spotAngle(45.0f)
-		, m_enabled(true)
-		, m_type(LightType::Point)
-	{
-		ZeroMemory(this, sizeof(this));
-	}
-};
 
 class LightManager
 {
@@ -53,6 +19,42 @@ public:
 
 
 private:
+
+	enum class LightType : uint32_t
+	{
+		Point = 0,
+		Spot = 1,
+		Directional = 2
+	};
+
+	struct Light
+	{
+		XMFLOAT3 m_positionWS;
+		float m_pad;
+		//(16b)
+		XMFLOAT4 m_directionWS;
+		//(16b)
+		XMFLOAT4 m_color;
+		//(16b)
+		float m_range;
+		float m_spotAngle;
+		uint32_t m_enabled;
+		LightType m_type;
+		//(16b)
+		//(16 * 5 = 80b)
+
+		Light()
+			: m_positionWS(0, 0, 0)
+			, m_directionWS(0, 0, -1, 1)
+			, m_color(1, 1, 1, 1)
+			, m_range(100.0f)
+			, m_spotAngle(45.0f)
+			, m_enabled(true)
+			, m_type(LightType::Point)
+		{
+			ZeroMemory(this, sizeof(this));
+		}
+	};
 
 
 	void RandomlyDistributeLights();

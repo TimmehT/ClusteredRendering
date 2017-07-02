@@ -13,7 +13,6 @@ public:
 private:
 
 	void InitBuffers(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList, ID3D11Device* device);
-	void InitTextures(std::vector<CTexture> textureList, ID3D11Device* device, ID3D11DeviceContext* context);
 
 	ID3D11Buffer* m_vertexBuffer;
 	ID3D11Buffer* m_indexBuffer;

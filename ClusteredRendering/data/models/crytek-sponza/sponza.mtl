@@ -347,6 +347,7 @@ newmtl chain
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures\chain_texture.png
 	map_Kd textures\chain_texture.png
+	maps_Ks textures\chain_specular.png
 	map_d textures\chain_texture_mask.png
 	map_bump textures\chain_ddn.png
 

@@ -35,6 +35,7 @@ private:
 	CTexture* LoadMaterialTexture(aiMaterial* mat, aiTextureType type, ID3D11Device* device, ID3D11DeviceContext* context );
 
 	std::vector<CMesh*> m_meshList;
+	std::vector<CMaterial*> m_loadedMaterials;
 	std::vector<CTexture*> m_loadedTextures;
 	std::string directory;
 

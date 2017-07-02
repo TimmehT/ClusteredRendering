@@ -5,6 +5,7 @@
 CMaterial::CMaterial(ID3D11Device* device)
 	: m_update(false)
 {
+	m_matConstantBuffer = nullptr;
 	InitBuffer(device);
 }
 
@@ -140,4 +141,14 @@ void CMaterial::Bind(ID3D11DeviceContext* context)
 
 		context->PSSetConstantBuffers(1, 1, &m_matConstantBuffer);
 	
+}
+
+void CMaterial::SetName(aiString name)
+{
+	m_materialName = name;
+}
+
+const aiString CMaterial::GetName()
+{
+	return m_materialName;
 }

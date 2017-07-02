@@ -26,9 +26,15 @@ static XMFLOAT4 GetRandomColor()
 	return color;
 }
 
-
 LightManager::LightManager()
 {
+	m_lightBuffer = nullptr;
+	m_lightSRV = nullptr;
+	m_lightIndexBuffer = nullptr;
+	m_lightIndexBufferView = nullptr;
+	m_clusterOffsetTex = nullptr;
+	m_clusterIndexOffsetView = nullptr;
+
 	m_clusterLightList = std::vector<short>(Constants::LIGHT_INDEX_COUNT);
 	m_lightIndexList= std::vector<int>(Constants::LIGHT_INDEX_COUNT);
 }
@@ -76,48 +82,48 @@ void LightManager::InitBuffers(ID3D11Device* device)
 
 	device->CreateShaderResourceView(m_lightBuffer, &lightSRVDesc, &m_lightSRV);
 
-	// Set up light index list
-	D3D11_BUFFER_DESC lightIndexBufferDesc;
-	ZeroMemory(&lightIndexBufferDesc, sizeof(D3D11_BUFFER_DESC));
-	lightIndexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	lightIndexBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	lightIndexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	lightIndexBufferDesc.StructureByteStride = sizeof(int);
-	lightIndexBufferDesc.ByteWidth = sizeof(int) * Constants::LIGHT_INDEX_COUNT;
-	lightIndexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	//// Set up light index list
+	//D3D11_BUFFER_DESC lightIndexBufferDesc;
+	//ZeroMemory(&lightIndexBufferDesc, sizeof(D3D11_BUFFER_DESC));
+	//lightIndexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	//lightIndexBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	//lightIndexBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	//lightIndexBufferDesc.StructureByteStride = sizeof(int);
+	//lightIndexBufferDesc.ByteWidth = sizeof(int) * Constants::LIGHT_INDEX_COUNT;
+	//lightIndexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	device->CreateBuffer(&lightIndexBufferDesc, nullptr, &m_lightIndexBuffer);
+	//device->CreateBuffer(&lightIndexBufferDesc, nullptr, &m_lightIndexBuffer);
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC lightIndexSRVDesc;
-	ZeroMemory(&lightIndexSRVDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-	lightSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-	lightSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	lightSRVDesc.BufferEx.FirstElement = 0;
-	lightSRVDesc.BufferEx.NumElements = Constants::LIGHT_INDEX_COUNT;
+	//D3D11_SHADER_RESOURCE_VIEW_DESC lightIndexSRVDesc;
+	//ZeroMemory(&lightIndexSRVDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+	//lightSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+	//lightSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	//lightSRVDesc.BufferEx.FirstElement = 0;
+	//lightSRVDesc.BufferEx.NumElements = Constants::LIGHT_INDEX_COUNT;
 
-	device->CreateShaderResourceView(m_lightIndexBuffer, &lightIndexSRVDesc, &m_lightIndexBufferView);
+	//device->CreateShaderResourceView(m_lightIndexBuffer, &lightIndexSRVDesc, &m_lightIndexBufferView);
 
-	// Create 3D texture for cluster
-	D3D11_TEXTURE3D_DESC clusterTexDesc;
-	ZeroMemory(&clusterTexDesc, sizeof(D3D11_TEXTURE3D_DESC));
-	clusterTexDesc.Width = Constants::NUM_X_CLUSTERS;
-	clusterTexDesc.Height = Constants::NUM_Y_CLUSTERS;
-	clusterTexDesc.Depth = Constants::NUM_Z_CLUSTERS;
-	clusterTexDesc.MipLevels = 1;
-	clusterTexDesc.Format = DXGI_FORMAT_R32G32_UINT;
-	clusterTexDesc.Usage = D3D11_USAGE_DYNAMIC;
-	clusterTexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	clusterTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	//// Create 3D texture for cluster
+	//D3D11_TEXTURE3D_DESC clusterTexDesc;
+	//ZeroMemory(&clusterTexDesc, sizeof(D3D11_TEXTURE3D_DESC));
+	//clusterTexDesc.Width = Constants::NUM_X_CLUSTERS;
+	//clusterTexDesc.Height = Constants::NUM_Y_CLUSTERS;
+	//clusterTexDesc.Depth = Constants::NUM_Z_CLUSTERS;
+	//clusterTexDesc.MipLevels = 1;
+	//clusterTexDesc.Format = DXGI_FORMAT_R32G32_UINT;
+	//clusterTexDesc.Usage = D3D11_USAGE_DYNAMIC;
+	//clusterTexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	//clusterTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	device->CreateTexture3D(&clusterTexDesc, nullptr, &m_clusterOffsetTex);
+	//device->CreateTexture3D(&clusterTexDesc, nullptr, &m_clusterOffsetTex);
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC clusterViewDesc;
-	ZeroMemory(&clusterViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-	clusterViewDesc.Format = clusterTexDesc.Format;
-	clusterViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	clusterViewDesc.Texture3D.MipLevels = 1;
+	//D3D11_SHADER_RESOURCE_VIEW_DESC clusterViewDesc;
+	//ZeroMemory(&clusterViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+	//clusterViewDesc.Format = clusterTexDesc.Format;
+	//clusterViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	//clusterViewDesc.Texture3D.MipLevels = 1;
 
-	device->CreateShaderResourceView(m_clusterOffsetTex, &clusterViewDesc, &m_clusterIndexOffsetView);
+	//device->CreateShaderResourceView(m_clusterOffsetTex, &clusterViewDesc, &m_clusterIndexOffsetView);
 	
 }
 

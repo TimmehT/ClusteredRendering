@@ -33,6 +33,8 @@ public:
 	void InitBuffer(ID3D11Device* device);
 	void UpdateBuffer(ID3D11DeviceContext* context);
 	void Bind(ID3D11DeviceContext* context);
+	void SetName(aiString name);
+	const aiString GetName();
 
 private:
 
@@ -80,5 +82,7 @@ private:
 	ID3D11Buffer* m_matConstantBuffer;
 
 	bool m_update;
+
+	aiString m_materialName;
 
 };

@@ -18,12 +18,17 @@ Model::~Model()
 	{
 		SafeDelete(m_loadedTextures[j]);
 	}
+
+	for (unsigned int j = 0; j < m_loadedMaterials.size(); j++)
+	{
+		SafeDelete(m_loadedMaterials[j]);
+	}
 }
 
 bool Model::LoadModel(const char* file, ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(file,  aiProcess_ConvertToLeftHanded | aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Triangulate | aiProcess_CalcTangentSpace );
+	const aiScene* scene = importer.ReadFile(file,  aiProcess_ConvertToLeftHanded | aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_RemoveRedundantMaterials );
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
@@ -103,7 +108,6 @@ CMesh* Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, ID3D11Device* de
 	std::vector<unsigned int> indices;
 	//std::vector<CTexture*> textures;
 	CMaterial* mat = new CMaterial(device);
-	
 	
 
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -218,45 +222,69 @@ CMaterial* Model::LoadMaterialProperties(aiMaterial * mat, ID3D11Device* device,
 	aiColor4D specular;
 	float specularPower;
 
-	CMaterial* material = new CMaterial(device);
+	aiString str;
+	mat->Get(AI_MATKEY_NAME, str);
 
-	if (mat->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor) == aiReturn_SUCCESS)
+	bool skip = false;
+	for (unsigned i = 0; i < m_loadedMaterials.size(); i++)
 	{
-		material->SetColor(CMaterial::ColorType::Ambient, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
-	if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == aiReturn_SUCCESS)
-	{
-		material->SetColor(CMaterial::ColorType::Diffuse, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
-	if (mat->Get(AI_MATKEY_COLOR_SPECULAR, specular) == aiReturn_SUCCESS)
-	{
-		material->SetColor(CMaterial::ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
-	}
-	if (mat->Get(AI_MATKEY_SHININESS, specularPower) == aiReturn_SUCCESS)
-	{
-		material->SetSpecularPower(specularPower);
-	}
-	if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-	{
-		material->SetTexture(CMaterial::TextureType::Diffuse, LoadMaterialTexture(mat, aiTextureType_DIFFUSE, device, context));
+		if (std::strcmp(m_loadedMaterials[i]->GetName().C_Str(), str.C_Str()) == 0)
+		{
+			return m_loadedMaterials[i];
+			skip = true;
+			break;
+		}
 	}
 
-	if (mat->GetTextureCount(aiTextureType_SPECULAR) > 0)
+	if (!skip)
 	{
-		material->SetTexture(CMaterial::TextureType::Specular, LoadMaterialTexture(mat, aiTextureType_SPECULAR, device, context));
-	}
+		CMaterial* material = new CMaterial(device);
 
-	if (mat->GetTextureCount(aiTextureType_HEIGHT) > 0)
-	{
-		material->SetTexture(CMaterial::TextureType::Normal, LoadMaterialTexture(mat, aiTextureType_HEIGHT, device, context));
-	}
+		if (mat->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor) == aiReturn_SUCCESS)
+		{
+			material->SetColor(CMaterial::ColorType::Ambient, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+		}
 
-	if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)
-	{
-		material->SetTexture(CMaterial::TextureType::Opacity, LoadMaterialTexture(mat, aiTextureType_OPACITY, device, context));
-	}
+		if (mat->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+		{
+			material->SetTexture(CMaterial::TextureType::Diffuse, LoadMaterialTexture(mat, aiTextureType_DIFFUSE, device, context));
+		}
+		else if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == aiReturn_SUCCESS)
+		{
+			material->SetColor(CMaterial::ColorType::Diffuse, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+		}
 
-	return material;
+		if (mat->GetTextureCount(aiTextureType_SPECULAR) > 0)
+		{
+			material->SetTexture(CMaterial::TextureType::Specular, LoadMaterialTexture(mat, aiTextureType_SPECULAR, device, context));
+		}
+		else if (mat->Get(AI_MATKEY_COLOR_SPECULAR, specular) == aiReturn_SUCCESS)
+		{
+			material->SetColor(CMaterial::ColorType::Specular, XMFLOAT4(ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a));
+		}
+
+		if (mat->Get(AI_MATKEY_SHININESS, specularPower) == aiReturn_SUCCESS)
+		{
+			material->SetSpecularPower(specularPower);
+		}
+
+		if (mat->GetTextureCount(aiTextureType_HEIGHT) > 0)
+		{
+			material->SetTexture(CMaterial::TextureType::Normal, LoadMaterialTexture(mat, aiTextureType_HEIGHT, device, context));
+		}
+
+		if (mat->GetTextureCount(aiTextureType_OPACITY) > 0)
+		{
+			material->SetTexture(CMaterial::TextureType::Opacity, LoadMaterialTexture(mat, aiTextureType_OPACITY, device, context));
+		}
+
+		material->SetName(str);
+		m_loadedMaterials.push_back(material);
+
+		return material;
+	}
+	return nullptr;
+	
 }
 
 CTexture * Model::LoadMaterialTexture(aiMaterial * mat, aiTextureType type, ID3D11Device * device, ID3D11DeviceContext * context)
@@ -268,13 +296,12 @@ CTexture * Model::LoadMaterialTexture(aiMaterial * mat, aiTextureType type, ID3D
 		bool skip = false;
 		for (unsigned int i = 0; i < m_loadedTextures.size(); i++)
 		{
-			if (std::strcmp(m_loadedTextures[i]->GetTexData().path.C_Str(), str.C_Str()) == 0)
+			if (std::strcmp(m_loadedTextures[i]->GetPath().C_Str(), str.C_Str()) == 0)
 			{
 				return m_loadedTextures[i];
 				skip = true;
 				break;
 			}
-
 		}
 
 		if (!skip)
@@ -290,19 +317,12 @@ CTexture * Model::LoadMaterialTexture(aiMaterial * mat, aiTextureType type, ID3D
 
 			filepath = std::string(directory.c_str()) + '/' + std::string(filepath.c_str());
 			wchar_t wc_path[MAX_PATH];
-			//wchar_t wc_p;
-
-
 			mbstowcs_s(nullptr, wc_path, filepath.c_str(), MAX_PATH);
-
 			texture->LoadTextureFromFile(device, context, wc_path);
-
-			//texture.SetFinalPath(wc_path);
 			texture->SetPath(str);
 			m_loadedTextures.push_back(texture);
 			return texture;
 		}
 		
 			return nullptr;
-
 }

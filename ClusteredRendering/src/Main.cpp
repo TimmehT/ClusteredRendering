@@ -44,7 +44,6 @@ Shader* g_ps;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LightResources
 LightManager g_lightManager;
-//ID3D11ShaderResourceView* depthBufferView;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ModelResources
 Model g_sponza;
@@ -347,7 +346,6 @@ int InitDirectX(HINSTANCE hInstance, BOOL vSync)
 		return -1;
 	}
 
-	//hr = g_d3dDevice->CreateShaderResourceView(g_d3dDepthStencilBuffer, nullptr, &depthBufferView);
 
 	// Setup depth/stencil state.
 	D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc;
@@ -757,7 +755,6 @@ void Render()
 
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 
-	//g_d3dDeviceContext->PSSetShaderResources(4, 1, &depthBufferView);
 	//g_lightManager.BuildClusters(g_cam.GetPosition(), g_cam.GetLook(), g_cam.GetRight(), g_cam.GetUp());
 	//g_lightManager.CheckIntersection();
 	g_lightManager.BindBuffer(g_d3dDeviceContext);
@@ -773,7 +770,6 @@ void Cleanup()
 {
 
 	g_d3dSwapChain->SetFullscreenState(FALSE, nullptr);
-	//SafeRelease(depthBufferView);
 	SafeRelease(g_d3dDepthStencilView);
 	SafeRelease(g_backBuffer);
 	SafeRelease(g_d3dDepthStencilBuffer);

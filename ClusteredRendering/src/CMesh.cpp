@@ -11,8 +11,6 @@ CMesh::CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList
 	m_numIndices = indexList->size();
 	m_vertexStride = sizeof(Vert);
 	m_vertexOffset = 0;
-	//textures = textureList;
-
 	InitBuffers(vertexList, indexList, device);
 }
 
@@ -27,9 +25,6 @@ CMesh::~CMesh()
 	{
 		SafeRelease(m_vertexBuffer);
 	}
-
-	SafeDelete(material);
-
 }
 
 void CMesh::Render(ID3D11DeviceContext* context)
@@ -42,7 +37,6 @@ void CMesh::Render(ID3D11DeviceContext* context)
 		material->Bind(context);
 	}
 	
-
 	context->DrawIndexed(m_numIndices, 0, 0);
 
 }
@@ -86,10 +80,4 @@ void CMesh::InitBuffers(std::vector<Vert>* vertexList, std::vector<unsigned int>
 	}
 }
 
-void CMesh::InitTextures(std::vector<CTexture> textureList, ID3D11Device * device, ID3D11DeviceContext * context)
-{
-	for (unsigned int i = 0; i < textureList.size(); i++)
-	{
-		//textureList[i].LoadTextureFromFile(device, context, );
-	}
-}
+
