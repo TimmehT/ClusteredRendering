@@ -33,7 +33,7 @@ VertexShaderOutput SimpleVertexShader(AppData IN)
     OUT.normal = mul(IN.normal,(float3x3)worldInvTranspose);
     OUT.tangentW = mul(IN.tangent, (float3x3) worldInvTranspose);
     OUT.binormalW = mul(IN.binormal, (float3x3) worldInvTranspose);
-
+    
     return OUT;
 
 }

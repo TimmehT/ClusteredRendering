@@ -57,7 +57,7 @@ float4 SimplePixelShader(PixelShaderInput IN) : SV_Target
     float4 final = (ambient + diffuse) + spec;
 
     //textureColor = float4(IN.normal, 1);
-
+    
 
     return final;
 }
