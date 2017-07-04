@@ -43,10 +43,10 @@ Shader* g_vs;
 Shader* g_ps;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LightResources
-LightManager g_lightManager;
+LightManager* g_lightManager;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ModelResources
-Model g_sponza;
+Model* g_sponza;
 
 ID3D11Buffer* g_d3dObjectBuffer;
 
@@ -453,19 +453,21 @@ bool LoadContent()
 		return false;
 	}
 
-	if (!g_sponza.LoadModel("../data/models/crytek-sponza/sponza.obj", g_d3dDevice, g_d3dDeviceContext))
+	g_sponza = new Model();
+
+	if (!g_sponza->LoadModel("../data/models/crytek-sponza/sponza.obj", g_d3dDevice, g_d3dDeviceContext))
 	{
 		return false;
 	}
 
-	g_sponza.SetScale(0.1f, 0.1f, 0.1f);
-	g_sponza.SetRotation(0.0f, 90.0f, 0.0f);
-	g_sponza.SetTranslation(0.0f, -2.0f, 0.0f);
-	g_sponza.SetWorldMatrix(g_sponza.GetModelData().m_scaleMatrix, g_sponza.GetModelData().m_rotationMatrix, g_sponza.GetModelData().m_translationMatrix);
+	g_sponza->SetScale(0.1f, 0.1f, 0.1f);
+	g_sponza->SetRotation(0.0f, 90.0f, 0.0f);
+	g_sponza->SetTranslation(0.0f, -2.0f, 0.0f);
+	g_sponza->SetWorldMatrix(g_sponza->GetModelData().m_scaleMatrix, g_sponza->GetModelData().m_rotationMatrix, g_sponza->GetModelData().m_translationMatrix);
 	perObject.g_worldMatrix = XMMatrixIdentity();
 	
-
-	g_lightManager.InitBuffers(g_d3dDevice);
+	g_lightManager = new LightManager();
+	g_lightManager->InitBuffers(g_d3dDevice);
 
 
 	g_d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -475,6 +477,8 @@ bool LoadContent()
 
 void UnloadContent()
 {
+	SafeDelete(g_lightManager);
+	SafeDelete(g_sponza);
 	SafeRelease(g_d3dSamplerState);
 	SafeRelease(g_d3dFrameBuffer);
 	SafeRelease(g_d3dObjectBuffer);
@@ -688,7 +692,7 @@ void Update(float deltaTime)
 	
 	if (animateLight)
 	{
-		g_lightManager.Update(deltaTime);
+		g_lightManager->Update(deltaTime);
 	}
 
 	 view = EngineMath::Float4X4ToMatrix(g_cam.GetCamData().viewMat);
@@ -730,11 +734,11 @@ void Render()
 
 	g_vs->Push();
 
-	perObject.g_worldMatrix = EngineMath::Float4X4ToMatrix(g_sponza.GetModelData().m_worldMatrix);
+	perObject.g_worldMatrix = EngineMath::Float4X4ToMatrix(g_sponza->GetModelData().m_worldMatrix);
 	perObject.g_wvp = perObject.g_worldMatrix * view * proj;
 	perObject.g_wvp = XMMatrixTranspose(perObject.g_wvp);
 	perObject.g_worldMatrix = XMMatrixTranspose(perObject.g_worldMatrix);
-	perObject.g_invWorld = EngineMath::Float4X4ToMatrix(g_sponza.GetModelData().m_inverseWorld);
+	perObject.g_invWorld = EngineMath::Float4X4ToMatrix(g_sponza->GetModelData().m_inverseWorld);
 
 	g_d3dDeviceContext->Map(g_d3dObjectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource2);
 	memcpy(mappedResource2.pData, &perObject, sizeof(perObject));
@@ -755,13 +759,13 @@ void Render()
 
 	g_d3dDeviceContext->PSSetSamplers(0, 1, &g_d3dSamplerState);
 
-	//g_lightManager.BuildClusters(g_cam.GetPosition(), g_cam.GetLook(), g_cam.GetRight(), g_cam.GetUp());
-	//g_lightManager.CheckIntersection();
-	g_lightManager.BindBuffer(g_d3dDeviceContext);
+	g_lightManager->BuildClusters(g_cam.GetPosition(), g_cam.GetLook(), g_cam.GetRight(), g_cam.GetUp());
+	//g_lightManager->ClusterLightAssignment();
+	g_lightManager->BindBuffer(g_d3dDeviceContext);
 	g_d3dDeviceContext->OMSetRenderTargets(1, &g_backBuffer, g_d3dDepthStencilView);
 	g_d3dDeviceContext->OMSetDepthStencilState(g_d3dDepthStencilState, 1);
 
-	g_sponza.Render(g_d3dDeviceContext);
+	g_sponza->Render(g_d3dDeviceContext);
 
 	Present(g_enableVSync);
 }
@@ -777,6 +781,15 @@ void Cleanup()
 	SafeRelease(g_d3dRasterizerState);
 	SafeRelease(g_d3dSwapChain);
 	SafeRelease(g_d3dDeviceContext);
+#if _DEBUG
+	ID3D11Debug* DebugDevice = nullptr;
+	HRESULT result = g_d3dDevice->QueryInterface(__uuidof(ID3D11Debug), (void**)(&DebugDevice));
+	
+	result = DebugDevice->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+
+	SafeRelease(DebugDevice);
+#endif
+
 	SafeRelease(g_d3dDevice);
 }
 

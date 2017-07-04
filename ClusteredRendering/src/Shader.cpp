@@ -5,6 +5,14 @@ Shader::Shader(ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	m_device = device;
 	m_context = context;
+	m_vertexShader = nullptr;
+	m_pixelShader = nullptr;
+	m_computeShader = nullptr;
+	m_hullShader = nullptr;
+	m_domainShader = nullptr;
+	m_geometryShader = nullptr;
+	m_shaderBlob = nullptr;
+	m_inputLayout = nullptr;
 }
 
 Shader::~Shader()

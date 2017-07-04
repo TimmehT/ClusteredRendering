@@ -9,11 +9,6 @@ Model::Model()
 
 Model::~Model()
 {
-	for (unsigned int i = 0; i < m_meshList.size(); i++)
-	{
-		SafeDelete(m_meshList[i]);
-	}
-
 	for (unsigned int j = 0; j < m_loadedTextures.size(); j++)
 	{
 		SafeDelete(m_loadedTextures[j]);
@@ -22,6 +17,11 @@ Model::~Model()
 	for (unsigned int j = 0; j < m_loadedMaterials.size(); j++)
 	{
 		SafeDelete(m_loadedMaterials[j]);
+	}
+
+	for (unsigned int i = 0; i < m_meshList.size(); i++)
+	{
+		SafeDelete(m_meshList[i]);
 	}
 }
 

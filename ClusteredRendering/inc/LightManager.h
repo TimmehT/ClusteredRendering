@@ -15,7 +15,7 @@ public:
 	void Update(float dt);
 
 	void BuildClusters(XMFLOAT3 cameraPosition, XMFLOAT3 cameraLook, XMFLOAT3 cameraRight, XMFLOAT3 cameraUp );
-	void CheckIntersection();
+	void ClusterLightAssignment();
 
 
 private:
@@ -84,6 +84,10 @@ private:
 
 	std::vector<short> m_clusterLightList;
 	std::vector<int> m_lightIndexList;
+
+	float m_dist = Constants::FARZ / Constants::SPECIAL_NEAR;
+	float m_exponential = 0;
+	float m_fin = 0;
 
 	XMUINT2 m_clusterIndexOffset[(32) *  (Constants::NUM_Y_CLUSTERS + 1) * (Constants::NUM_Z_CLUSTERS + 1)];
 

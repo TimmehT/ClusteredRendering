@@ -16,15 +16,8 @@ CMesh::CMesh(std::vector<Vert>* vertexList, std::vector<unsigned int>* indexList
 
 CMesh::~CMesh()
 {
-	if (m_indexBuffer)
-	{
-		SafeRelease(m_indexBuffer);
-	}
-
-	if (m_vertexBuffer)
-	{
-		SafeRelease(m_vertexBuffer);
-	}
+	SafeRelease(m_indexBuffer);
+	SafeRelease(m_vertexBuffer);
 }
 
 void CMesh::Render(ID3D11DeviceContext* context)
